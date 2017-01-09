@@ -22,6 +22,7 @@ Please signal errors and send suggestions for improvements to renaud.pacalet@tel
     * [Run a user application on the Zybo](#FurtherUserApp)
     * [Debug a user application with gdb](#FurtherUserAppDebug)
     * [Access SAB4Z from a user application on the Zybo](#FurtherSab4zApp)
+    * [Add a Linux driver for SAB4Z](#FurtherSab4zLinuxDriver)
     * [Run the complete software stack across SAB4Z](#FurtherRunAcrossSab4z)
     * [Debug hardware using ILA](#FurtherIla)
 * [Frequently Asked Questions (FAQ)](#FAQ)
@@ -52,31 +53,37 @@ http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
 # <a name="Content"></a>Content
 
     .
-    ├── archives                Archives
-    │   └── sdcard.tgz          Archive to unpack on MicroSD card
-    ├── C                       C source code
-    │   ├── hello_world.c       Simple example user application
-    │   └── sab4z.c             User application using SAB4Z
-    ├── COPYING                 License (English version)
-    ├── COPYING-FR              Licence (version française)
-    ├── COPYRIGHT               Copyright notice
-    ├── hdl                     VHDL source code
-    │   ├── axi_pkg.vhd         Package of AXI definitions
-    │   ├── debouncer.vhd       Debouncer-resynchronizer
-    │   └── sab4z.vhd           Top-level SAB4Z
-    ├── images                  Figures
-    │   ├── sab4z.fig           SAB4Z in Zybo
-    │   ├── sab4z.png           PNG export of sab4z.fig
-    │   └── zybo.png            Zybo board
-    ├── Makefile                Main makefile
-    ├── README.md               This file
-    └── scripts                 Scripts
-        ├── boot.bif            Zynq Boot Image description File
-        ├── dts.tcl             TCL script for device tree generation
-        ├── fsbl.tcl            TCL script for FSBL generation
-        ├── ila.tcl             TCL script for ILA debug cores
-        ├── uEnv.txt            Definitions of U-Boot environment variables
-        └── vvsyn.tcl           Vivado TCL synthesis script
+    ├── archives                  Archives
+    │   └── sdcard.tgz            Archive to unpack on MicroSD card
+    ├── C                         C source code
+    │   ├── hello_world.c         Simple example user application
+    │   ├── libsab4z.c            User-space part of Linux driver
+    │   ├── libsab4z.h            User-space part of Linux driver (header)
+    │   ├── Makefile              Makefile for software
+    │   ├── sab4z.c               User application using SAB4Z
+    │   ├── sab4z_driver.c        Kernel-space part of Linux driver
+    │   ├── sab4z_driver.h        Kernel-space part of Linux driver (header)
+    │   └── test_sab4z_driver.c   Linux driver test application
+    ├── COPYING                   License (English version)
+    ├── COPYING-FR                Licence (version française)
+    ├── COPYRIGHT                 Copyright notice
+    ├── hdl                       VHDL source code
+    │   ├── axi_pkg.vhd           Package of AXI definitions
+    │   ├── debouncer.vhd         Debouncer-resynchronizer
+    │   └── sab4z.vhd             Top-level SAB4Z
+    ├── images                    Figures
+    │   ├── sab4z.fig             SAB4Z in Zybo
+    │   ├── sab4z.png             PNG export of sab4z.fig
+    │   └── zybo.png              Zybo board
+    ├── Makefile                  Main makefile
+    ├── README.md                 This file
+    └── scripts                   Scripts
+        ├── boot.bif              Zynq Boot Image description File
+        ├── dts.tcl               TCL script for device tree generation
+        ├── fsbl.tcl              TCL script for FSBL generation
+        ├── ila.tcl               TCL script for ILA debug cores
+        ├── uEnv.txt              Definitions of U-Boot environment variables
+        └── vvsyn.tcl             Vivado TCL synthesis script
 
 # <a name="Description"></a>Description
 
@@ -238,15 +245,15 @@ The embedded system world sometimes looks overcomplicated to non-specialists. Bu
 
 ---
 
-**Note**: the [Linux](#GlossaryLinuxKernel) repository, the [Buildroot](https://buildroot.org/) repository and the directory in which we will build all components (`$SAB4Z/build`) occupy several GB of disk space each. Carefully select where to install them.
+**Note**: the [Linux](#GlossaryLinuxKernel) repository, the [Buildroot](https://buildroot.org/) repository and the directory in which we will build all components (`$ROOT/build`) occupy several GB of disk space each. Carefully select where to install them.
 
 ---
 
 ## <a name="BuildDownloads"></a>Downloads
 
-First define shell environment variables pointing to the local copies of the various git repositories we need. Their approximate respective sizes are provided in comments to help you deciding where to put them. Note that they will potentially grow a bit each time you will pull the last commits from the remote repositories. Note also that we will build everything in a sub-directory of `$SAB4Z` and that the total size of `$SAB4Z` will increase a lot during the build.
+First define shell environment variables pointing to the local copies of the various git repositories we need. Their approximate respective sizes are provided in comments to help you deciding where to put them. Note that they will potentially grow a bit each time you will pull the last commits from the remote repositories. Note also that we will build everything in a sub-directory of `$ROOT` and that the total size of `$ROOT` will increase a lot during the build.
 
-    Host> SAB4Z=<some-path>/sab4z            # 3.3GB after all builds
+    Host> ROOT=<some-path>/sab4z            # 3.3GB after all builds
     Host> XLINUX=<some-path>/linux-xlnx      # 2.3GB
     Host> XUBOOT=<some-path>/u-boot-xlnx     # 270MB
     Host> XDTS=<some-path>/device-tree-xlnx  # 2MB
@@ -254,7 +261,7 @@ First define shell environment variables pointing to the local copies of the var
 
 Clone all components from their respective git repositories:
 
-    Host> git clone https://gitlab.eurecom.fr/renaud.pacalet/sab4z.git $SAB4Z
+    Host> git clone https://gitlab.eurecom.fr/renaud.pacalet/sab4z.git $ROOT
     Host> git clone https://github.com/Xilinx/linux-xlnx.git $XLINUX
     Host> git clone https://github.com/Xilinx/u-boot-xlnx.git $XUBOOT
     Host> git clone http://github.com/Xilinx/device-tree-xlnx.git $XDTS
@@ -262,17 +269,17 @@ Clone all components from their respective git repositories:
 
 ## <a name="BuildSynthesis"></a>Hardware synthesis
 
-The hardware synthesis produces a bitstream file from the VHDL source code (in `$SAB4Z/hdl`). It is done by the Xilinx Vivado tools. SAB4Z comes with a Makefile and a synthesis script that automate the synthesis:
+The hardware synthesis produces a bitstream file from the VHDL source code (in `$ROOT/hdl`). It is done by the Xilinx Vivado tools. SAB4Z comes with a Makefile and a synthesis script that automate the synthesis:
 
-    Host-Xilinx> SAB4Z=<some-path>/sab4z
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> ROOT=<some-path>/sab4z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> make vv-all
 
-The generated bitstream is `$SAB4Z/build/vv/top.runs/impl_1/top_wrapper.bit`. This binary file is used to configure the FPGA part of the Zynq core of the Zybo board such that it implements our VHDL design. A binary description of our hardware design is also available in `$SAB4Z/build/vv/top.runs/impl_1/top_wrapper.sysdef`. It is not human-readable but we will use it later to generate the [device tree](#GlossaryDeviceTree) sources and the [First Stage Boot Loader](#GlossaryFsbl) (FSBL) sources.
+The generated bitstream is `$ROOT/build/vv/top.runs/impl_1/top_wrapper.bit`. This binary file is used to configure the FPGA part of the Zynq core of the Zybo board such that it implements our VHDL design. A binary description of our hardware design is also available in `$ROOT/build/vv/top.runs/impl_1/top_wrapper.sysdef`. It is not human-readable but we will use it later to generate the [device tree](#GlossaryDeviceTree) sources and the [First Stage Boot Loader](#GlossaryFsbl) (FSBL) sources.
 
 ---
 
-**Note**: we will also use the `$SAB4Z/build` directory to build and store all other components.
+**Note**: we will also use the `$ROOT/build` directory to build and store all other components.
 
 ---
 
@@ -280,16 +287,16 @@ The generated bitstream is `$SAB4Z/build/vv/top.runs/impl_1/top_wrapper.bit`. Th
 
 Just like your host, our Zybo computer needs a root [file system](#GlossaryFileSystem) to run a decent operating system like GNU/Linux. We will use [Buildroot](https://buildroot.org/) to build and populated a [Busybox](https://www.busybox.net/)-based, tiny, [initramfs](#GlossaryInitramfs) root [file system](#GlossaryFileSystem). In other notes will will explore other types of root [file systems](#GlossaryFileSystem) (networked [file systems](#GlossaryFileSystem), [file systems](#GlossaryFileSystem) on the MicroSD card...) but as [initramfs](#GlossaryInitramfs) is probably the simplest of all, let us start with this one.
 
-[Buildroot](https://buildroot.org/) is a very nice and easy to use toolbox dedicated to the creation of root [file systems](#GlossaryFileSystem) for many different target embedded systems. It can also build [Linux kernels](#GlossaryLinuxKernel) and other useful software but we will use it only to generate our root [file system](#GlossaryFileSystem). [Buildroot](https://buildroot.org/) has no default configuration for the Zybo board but the ZedBoard (another very common board based on Xilinx Zynq cores) default configuration works also for the Zybo. First create a default [Buildroot](https://buildroot.org/) configuration in `$SAB4Z/build/rootfs` for our board:
+[Buildroot](https://buildroot.org/) is a very nice and easy to use toolbox dedicated to the creation of root [file systems](#GlossaryFileSystem) for many different target embedded systems. It can also build [Linux kernels](#GlossaryLinuxKernel) and other useful software but we will use it only to generate our root [file system](#GlossaryFileSystem). [Buildroot](https://buildroot.org/) has no default configuration for the Zybo board but the ZedBoard (another very common board based on Xilinx Zynq cores) default configuration works also for the Zybo. First create a default [Buildroot](https://buildroot.org/) configuration in `$ROOT/build/rootfs` for our board:
 
-    Host> mkdir -p $SAB4Z/build/rootfs
-    Host> touch $SAB4Z/build/rootfs/external.mk $SAB4Z/build/rootfs/Config.in
+    Host> mkdir -p $ROOT/build/rootfs
+    Host> touch $ROOT/build/rootfs/external.mk $ROOT/build/rootfs/Config.in
     Host> cd $BUILDROOT
-    Host> make BR2_EXTERNAL=$SAB4Z/build/rootfs O=$SAB4Z/build/rootfs zynq_zed_defconfig
+    Host> make BR2_EXTERNAL=$ROOT/build/rootfs O=$ROOT/build/rootfs zynq_zed_defconfig
 
 Then, customize the default configuration:
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> make menuconfig
 
 In the [Buildroot](https://buildroot.org/) configuration menus change the following options:
@@ -305,18 +312,18 @@ In the [Buildroot](https://buildroot.org/) configuration menus change the follow
 
 Quit (save when asked). The options we modified configure [Buildroot](https://buildroot.org/) to:
 
-1. download all needed software packages in `$SAB4Z/build/rootfs/dl`,
+1. download all needed software packages in `$ROOT/build/rootfs/dl`,
 1. use a compiler cache (faster build),
-1. put the compiler cache in `$SAB4Z/build/rootfs/.buildroot-ccache`,
+1. put the compiler cache in `$ROOT/build/rootfs/.buildroot-ccache`,
 1. customize the host name,
 1. customize the welcome banner,
-1. specify an overlay directory (a convenient way to customize the built root [file system](#GlossaryFileSystem)) in `$SAB4Z/build/rootfs/overlays`,
+1. specify an overlay directory (a convenient way to customize the built root [file system](#GlossaryFileSystem)) in `$ROOT/build/rootfs/overlays`,
 1. skip [Linux kernel](#GlossaryLinuxKernel) build (we will use the [Linux kernel](#GlossaryLinuxKernel) from the Xilinx git repository),
 1. skip [U-Boot](http://www.denx.de/wiki/U-Boot) build (we will the [U-Boot](http://www.denx.de/wiki/U-Boot) from the Xilinx git repository).
 
 The overlay directory that we specified will be incorporated in the root [file system](#GlossaryFileSystem). It is anchored to the root directory of the root [file system](#GlossaryFileSystem), that is, any file or directory located at the root of the overlay directory will be located at the root of the [file system](#GlossaryFileSystem). Create the overlay directory, populate it with a simple shell script that changes the default shell prompt and build the root [file system](#GlossaryFileSystem):
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> mkdir -p overlays/etc/profile.d
     Host> echo "export PS1='Sab4z> '" > overlays/etc/profile.d/prompt.sh
     Host> make
@@ -329,25 +336,25 @@ The overlay directory that we specified will be incorporated in the root [file s
 
 The generated root [file system](#GlossaryFileSystem) is available in different formats:
 
-* `$SAB4Z/build/rootfs/images/rootfs.tar` is a tar archive that we can explore with the tar utility. This is left as an exercise for the reader.
-* `$SAB4Z/build/rootfs/images/rootfs.cpio` is the same but in cpio format (another archive format).
-* `$SAB4Z/build/rootfs/images/rootfs.cpio.gz` is the compressed version of `$SAB4Z/build/rootfs/images/rootfs.cpio`.
-* Finally, `$SAB4Z/build/rootfs/images/rootfs.cpio.uboot` is the same as `$SAB4Z/build/rootfs/images/rootfs.cpio.gz` with a 64 bytes header added. As its name says, this last form is intended for use with the [U-Boot](http://www.denx.de/wiki/U-Boot) boot loader and the added header is for [U-Boot](http://www.denx.de/wiki/U-Boot) use. More on [U-Boot](http://www.denx.de/wiki/U-Boot) later. This version is thus the root [file system](#GlossaryFileSystem) image that we will store on the MicroSD card and use on the Zybo, but is it not yet the final version. We still have a few things to add to the overlays.
+* `$ROOT/build/rootfs/images/rootfs.tar` is a tar archive that we can explore with the tar utility. This is left as an exercise for the reader.
+* `$ROOT/build/rootfs/images/rootfs.cpio` is the same but in cpio format (another archive format).
+* `$ROOT/build/rootfs/images/rootfs.cpio.gz` is the compressed version of `$ROOT/build/rootfs/images/rootfs.cpio`.
+* Finally, `$ROOT/build/rootfs/images/rootfs.cpio.uboot` is the same as `$ROOT/build/rootfs/images/rootfs.cpio.gz` with a 64 bytes header added. As its name says, this last form is intended for use with the [U-Boot](http://www.denx.de/wiki/U-Boot) boot loader and the added header is for [U-Boot](http://www.denx.de/wiki/U-Boot) use. More on [U-Boot](http://www.denx.de/wiki/U-Boot) later. This version is thus the root [file system](#GlossaryFileSystem) image that we will store on the MicroSD card and use on the Zybo, but is it not yet the final version. We still have a few things to add to the overlays.
 
-The shell script that we added to the overlay (`$SAB4Z/build/rootfs/overlays/etc/profile.d/prompt.sh`) can be found at `/etc/profile.d/prompt.sh` in the generated root [file system](#GlossaryFileSystem):
+The shell script that we added to the overlay (`$ROOT/build/rootfs/overlays/etc/profile.d/prompt.sh`) can be found at `/etc/profile.d/prompt.sh` in the generated root [file system](#GlossaryFileSystem):
 
-    Host> tar tf $SAB4Z/build/rootfs/images/rootfs.tar | grep prompt
+    Host> tar tf $ROOT/build/rootfs/images/rootfs.tar | grep prompt
     ./etc/profile.d/prompt.sh
 
 [Buildroot](https://buildroot.org/) also built applications for the host PC that we will need later:
 
 * a complete toolchain (cross-compiler, debugger...) for the ARM processor of the Zybo,
 * dtc, a [device tree](#GlossaryDeviceTree) compiler (more on this later),
-* mkimage, a utility used to create images for [U-Boot](http://www.denx.de/wiki/U-Boot) (and that the build system used to create `$SAB4Z/build/rootfs/images/rootfs.cpio.uboot`).
+* mkimage, a utility used to create images for [U-Boot](http://www.denx.de/wiki/U-Boot) (and that the build system used to create `$ROOT/build/rootfs/images/rootfs.cpio.uboot`).
 
-They are in `$SAB4Z/build/rootfs/host/usr/bin`. Add this directory to your PATH and define the CROSS_COMPILE environment variable (note the trailing hyphen):
+They are in `$ROOT/build/rootfs/host/usr/bin`. Add this directory to your PATH and define the CROSS_COMPILE environment variable (note the trailing hyphen):
 
-    Host> export PATH=$PATH:$SAB4Z/build/rootfs/host/usr/bin
+    Host> export PATH=$PATH:$ROOT/build/rootfs/host/usr/bin
     Host> export CROSS_COMPILE=arm-buildroot-linux-uclibcgnueabi-
 
 ## <a name="BuildKernel"></a>Build the Linux kernel
@@ -358,14 +365,14 @@ They are in `$SAB4Z/build/rootfs/host/usr/bin`. Add this directory to your PATH 
 
 ---
 
-Run the [Linux kernel](#GlossaryLinuxKernel) configurator to create a default [kernel](#GlossaryLinuxKernel) configuration for our board in `$SAB4Z/build/kernel`:
+Run the [Linux kernel](#GlossaryLinuxKernel) configurator to create a default [kernel](#GlossaryLinuxKernel) configuration for our board in `$ROOT/build/kernel`:
 
     Host> cd $XLINUX
-    Host> make O=$SAB4Z/build/kernel ARCH=arm xilinx_zynq_defconfig
+    Host> make O=$ROOT/build/kernel ARCH=arm xilinx_zynq_defconfig
 
 Then, build the [kernel](#GlossaryLinuxKernel):
 
-    Host> cd $SAB4Z/build/kernel
+    Host> cd $ROOT/build/kernel
     Host> make -j8 ARCH=arm
 
 ---
@@ -380,24 +387,24 @@ Then, build the [kernel](#GlossaryLinuxKernel):
 
 Just like [Buildroot](https://buildroot.org/), the [Linux kernel](#GlossaryLinuxKernel) build system offers a way to tune the default configuration before building:
 
-    Host> cd $SAB4Z/build/kernel
+    Host> cd $ROOT/build/kernel
     Host> make ARCH=arm menuconfig
     Host> make -j8 ARCH=arm
 
 As for the root [file system](#GlossaryFileSystem), the [kernel](#GlossaryLinuxKernel) is available in different formats:
 
-* `$SAB4Z/build/kernel/vmlinux` is an uncompressed executable in ELF format,
-* `$SAB4Z/build/kernel/arch/arm/boot/zImage` is a compressed executable.
+* `$ROOT/build/kernel/vmlinux` is an uncompressed executable in ELF format,
+* `$ROOT/build/kernel/arch/arm/boot/zImage` is a compressed executable.
 
 And just like for the root [file system](#GlossaryFileSystem), none of these is the one we will use on the Zybo. In order to load the [kernel](#GlossaryLinuxKernel) in memory with [U-Boot](http://www.denx.de/wiki/U-Boot) we must generate a [kernel](#GlossaryLinuxKernel) image in [U-Boot](http://www.denx.de/wiki/U-Boot) format. This can be done using the [Linux kernel](#GlossaryLinuxKernel) build system. We just need to provide the load address and entry point that [U-Boot](http://www.denx.de/wiki/U-Boot) will use when loading the [kernel](#GlossaryLinuxKernel) into memory and when jumping into the [kernel](#GlossaryLinuxKernel):
 
-    Host> cd $SAB4Z/build/kernel
+    Host> cd $ROOT/build/kernel
     Host> make ARCH=arm LOADADDR=0x8000 uImage
 
-The result is in `$SAB4Z/build/kernel/arch/arm/boot/uImage` and, as its size shows, it the same as `$SAB4Z/build/kernel/arch/arm/boot/zImage` with a 64 bytes [U-Boot](http://www.denx.de/wiki/U-Boot) header added:
+The result is in `$ROOT/build/kernel/arch/arm/boot/uImage` and, as its size shows, it the same as `$ROOT/build/kernel/arch/arm/boot/zImage` with a 64 bytes [U-Boot](http://www.denx.de/wiki/U-Boot) header added:
 
 
-    Host> cd $SAB4Z/build/kernel
+    Host> cd $ROOT/build/kernel
     Host> ls -l arch/arm/boot/zImage arch/arm/boot/uImage
     -rw-r--r-- 1 mary users 3750312 Apr 11 13:09 arch/arm/boot/uImage
     -rwxr-xr-x 1 mary users 3750248 Apr 11 12:08 arch/arm/boot/zImage
@@ -415,15 +422,15 @@ When loading the [kernel](#GlossaryLinuxKernel), [U-Boot](http://www.denx.de/wik
 
 The [kernel](#GlossaryLinuxKernel) embeds a collection of software device drivers that are responsible for the management of the various hardware devices (network interface, timer, interrupt controller...) Some are integrated into the [kernel](#GlossaryLinuxKernel), some are delivered as _external modules_, a kind of device driver that is dynamically loaded in memory by the [kernel](#GlossaryLinuxKernel) when it is needed. These external modules must also be built and installed in our root [file system](#GlossaryFileSystem) where the [kernel](#GlossaryLinuxKernel) will find them, that is, in `/lib/modules`. The [Buildroot](https://buildroot.org/) overlays directory is the perfect way to embed the [kernel](#GlossaryLinuxKernel) modules in the root [file system](#GlossaryFileSystem). Of course, we will have to rebuild the root [file system](#GlossaryFileSystem) but this should be very fast.
 
-    Host> cd $SAB4Z/build/kernel
+    Host> cd $ROOT/build/kernel
     Host> make -j8 ARCH=arm modules
-    Host> make -j8 ARCH=arm modules_install INSTALL_MOD_PATH=$SAB4Z/build/rootfs/overlays
-    Host> cd $SAB4Z/build/rootfs
+    Host> make -j8 ARCH=arm modules_install INSTALL_MOD_PATH=$ROOT/build/rootfs/overlays
+    Host> cd $ROOT/build/rootfs
     Host> make
 
-The root [file system](#GlossaryFileSystem) `$SAB4Z/build/rootfs/images/rootfs.cpio.uboot` now contains the [kernel](#GlossaryLinuxKernel) modules and is complete:
+The root [file system](#GlossaryFileSystem) `$ROOT/build/rootfs/images/rootfs.cpio.uboot` now contains the [kernel](#GlossaryLinuxKernel) modules and is complete:
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> tar tf images/rootfs.tar ./lib/modules
     ./lib/modules/
     ./lib/modules/4.4.0-xilinx-34555-g7a003fc/
@@ -452,14 +459,14 @@ The root [file system](#GlossaryFileSystem) `$SAB4Z/build/rootfs/images/rootfs.c
 * prepare some parameters for the [kernel](#GlossaryLinuxKernel) in CPU registers and in the first 32 kB of memory,
 * jump into the [kernel](#GlossaryLinuxKernel) at the specified entry point.
 
-Run the [U-Boot](http://www.denx.de/wiki/U-Boot) configurator to create a default [U-Boot](http://www.denx.de/wiki/U-Boot) configuration for our board in `$SAB4Z/build/uboot`:
+Run the [U-Boot](http://www.denx.de/wiki/U-Boot) configurator to create a default [U-Boot](http://www.denx.de/wiki/U-Boot) configuration for our board in `$ROOT/build/uboot`:
 
     Host> cd $XUBOOT
-    Host> make O=$SAB4Z/build/uboot zynq_zybo_defconfig
+    Host> make O=$ROOT/build/uboot zynq_zybo_defconfig
 
 Then, build [U-Boot](http://www.denx.de/wiki/U-Boot):
 
-    Host> cd $SAB4Z/build/uboot
+    Host> cd $ROOT/build/uboot
     Host> make -j8
 
 ---
@@ -470,13 +477,13 @@ Then, build [U-Boot](http://www.denx.de/wiki/U-Boot):
 
 Just like [Buildroot](https://buildroot.org/) and the [Linux kernel](#GlossaryLinuxKernel), the [U-Boot](http://www.denx.de/wiki/U-Boot) build system offers a way to tune the default configuration before building:
 
-    Host> cd $SAB4Z/build/uboot
+    Host> cd $ROOT/build/uboot
     Host> make menuconfig
     Host> make -j8
 
-Again, the result of [U-Boot](http://www.denx.de/wiki/U-Boot) build is available in different formats. The one we are interested in and that we will use on the Zybo is the executable in ELF format, `$SAB4Z/build/uboot/u-boot`. Later, we will glue it together with several other files to create a single _boot image_ file. As the Xilinx bootgen utility that we will use for that insists that its extension is `.elf`, rename it:
+Again, the result of [U-Boot](http://www.denx.de/wiki/U-Boot) build is available in different formats. The one we are interested in and that we will use on the Zybo is the executable in ELF format, `$ROOT/build/uboot/u-boot`. Later, we will glue it together with several other files to create a single _boot image_ file. As the Xilinx bootgen utility that we will use for that insists that its extension is `.elf`, rename it:
 
-    Host> cp $SAB4Z/build/uboot/u-boot $SAB4Z/build/uboot/u-boot.elf
+    Host> cp $ROOT/build/uboot/u-boot $ROOT/build/uboot/u-boot.elf
 
 ## <a name="BuildHwDepSw"></a>Build the hardware dependant software
 
@@ -484,41 +491,41 @@ Do not start this part before the [hardware synthesis finishes](#BuildSynthesis)
 
 ### <a name="BuildHWDepSWDTS"></a>Linux kernel device tree
 
-SAB4Z comes with a Makefile and a TCL script that automate the generation of device tree sources using the Xilinx hsi utility, the clone of the git repository of Xilinx device trees (`<some-path>/device-tree-xlnx`) and the description of our hardware design that was generated during the hardware synthesis (`$SAB4Z/build/vv/top.runs/impl_1/top_wrapper.sysdef`). Generate the default device tree sources for our hardware design for the Zybo:
+SAB4Z comes with a Makefile and a TCL script that automate the generation of device tree sources using the Xilinx hsi utility, the clone of the git repository of Xilinx device trees (`<some-path>/device-tree-xlnx`) and the description of our hardware design that was generated during the hardware synthesis (`$ROOT/build/vv/top.runs/impl_1/top_wrapper.sysdef`). Generate the default device tree sources for our hardware design for the Zybo:
 
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> XDTS=<some-path>/device-tree-xlnx
     Host-Xilinx> make XDTS=$XDTS dts
 
-The sources are in `$SAB4Z/build/dts`, the top level is `$SAB4Z/build/dts/system.dts`. Have a look at the sources. If needed, edit them before compiling the device tree blob with dtc:
+The sources are in `$ROOT/build/dts`, the top level is `$ROOT/build/dts/system.dts`. Have a look at the sources. If needed, edit them before compiling the device tree blob with dtc:
 
-    Host> cd $SAB4Z
+    Host> cd $ROOT
     Host> dtc -I dts -O dtb -o build/devicetree.dtb build/dts/system.dts
 
 ### <a name="BuildHWDepSWFSBL"></a>First Stage Boot Loader (FSBL)
 
 Generate the [FSBL](#GlossaryFsbl) sources
 
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> make fsbl
 
-The sources are in `$SAB4Z/build/fsbl`. If needed, edit them before compiling the [FSBL](#GlossaryFsbl):
+The sources are in `$ROOT/build/fsbl`. If needed, edit them before compiling the [FSBL](#GlossaryFsbl):
 
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> make -C build/fsbl
 
 ### <a name="BuildHWDepSWBootImg"></a>Zynq boot image
 
 A Zynq boot image is a file that is read from the boot medium of the Zybo when the board is powered on. It contains the [FSBL](#GlossaryFsbl) ELF, the bitstream and the [U-Boot](http://www.denx.de/wiki/U-Boot) ELF. Generate the Zynq boot image with the Xilinx bootgen utility and the provided boot image description file:
 
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> bootgen -w -image scripts/boot.bif -o build/boot.bin
 
 ### <a name="BuildHWDepSWSDCard"></a>Prepare the MicroSD card
 
 Finally, prepare a MicroSD card with a FAT32 first primary partition (8MB minimum), mount it on your host PC, and copy the different components to it:
 
-    Host> cd $SAB4Z
+    Host> cd $ROOT
     Host> cp build/boot.bin build/devicetree.dtb build/kernel/arch/arm/boot/uImage <path-to-mounted-sd-card>
     Host> cp build/rootfs/images/rootfs.cpio.uboot <path-to-mounted-sd-card>/uramdisk.image.gz
     Host> sync
@@ -534,7 +541,7 @@ The serial interface that we use to interact with the Zybo is limited both in te
 
 From now on we consider that the host and the Zybo can be connected on the same wired network. We also consider that the host knows the Zybo under the sab4z hostname. The next step is to add dropbear, a tiny ssh server, to our root [file system](#GlossaryFileSystem) and enable the networking. This will allow us to connect to the Zybo from the host using a ssh client.
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> make menuconfig
 
 In the [Buildroot](https://buildroot.org/) configuration menus change the following options
@@ -544,14 +551,14 @@ In the [Buildroot](https://buildroot.org/) configuration menus change the follow
 
 By default, for security reasons, the board will reject ssh connections for user root. Let us copy our host ssh public key to the Zybo such that we can connect as root on the Zybo, from the host, without password. If you do not have a ssh key already, generate one first with ssh-keygen. Assuming our public key on the host is `~/.ssh/id_rsa.pub`, add it to the [Buildroot](https://buildroot.org/) overlays and rebuild the root [file system](#GlossaryFileSystem):
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> mkdir -p overlays/root/.ssh
     Host> cp ~/.ssh/id_rsa.pub overlays/root/.ssh/authorized_keys
     Host> make
 
 Mount the MicroSD card on your host PC, copy the new root [file system](#GlossaryFileSystem) image on it, unmount and eject the MicroSD card, plug it in the Zybo, power on and try to connect from the host:
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> cp images/rootfs.cpio.uboot <path-to-mounted-sd-card>/uramdisk.image.gz
     Host> sync
     Host> umount <path-to-mounted-sd-card>
@@ -577,7 +584,7 @@ A [ECDSA](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorit
 
 Unfortunately, our root [file system](#GlossaryFileSystem) is [initramfs](#GlossaryInitramfs) and thus non persistent across reboot. Next time, a new ECDSA host key will be generated and it will be different, forcing us to delete the old one and add the new one to the `~/.ssh/known_hosts` file on the host. To avoid this, let us copy the generated ECDSA host key to the [Buildroot](https://buildroot.org/) overlays, such that the authentification of the Zybo becomes persistent across reboot. The dropbear ssh server that runs on the Zybo, when discovering that an ECDSA host key is already present in `/etc/dropbear`, will reuse it instead of creating a new one. Let us use our new network interface to do this:
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> mkdir -p overlays/etc/dropbear
     Host> scp root@sab4z:/etc/dropbear/dropbear_ecdsa_host_key overlays/etc/dropbear
     Host> make
@@ -596,7 +603,7 @@ We must now copy the new root [file system](#GlossaryFileSystem) image on the Mi
 
 Then, use the network link to transfer the new root [file system](#GlossaryFileSystem) image to the MicroSD card on the Zybo:
 
-    Host> cd $SAB4Z
+    Host> cd $ROOT
     Host> scp build/rootfs/images/rootfs.cpio.uboot root@sab4z:/mnt/uramdisk.image.gz
 
 Finally, on the Zybo, unmount the MicroSD card and reboot:
@@ -698,14 +705,14 @@ Do not forget to unmount the card properly before shutting down the Zybo. If you
 
 Another possibility is offered by the overlay feature of [Buildroot](https://buildroot.org/) which allows to embed custom files in the generated root [file system](#GlossaryFileSystem). Add the files to transfer to the overlay and rebuild the root [file system](#GlossaryFileSystem):
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> mkdir -p overlays/tmp
     Host> cp foo overlays/tmp
     Host> make
 
 Mount the MicroSD card on your host PC, copy the new root [file system](#GlossaryFileSystem) image on it:
 
-    Host> cp $SAB4Z/build/rootfs/images/rootfs.cpio.uboot <path-to-mounted-sd-card>/uramdisk.image.gz
+    Host> cp $ROOT/build/rootfs/images/rootfs.cpio.uboot <path-to-mounted-sd-card>/uramdisk.image.gz
 
 Unmount and eject the MicroSD card, plug it in the Zybo, power on and connect as root:
 
@@ -716,7 +723,7 @@ Unmount and eject the MicroSD card, plug it in the Zybo, power on and connect as
 
 The drawback of the two previous solutions is the MicroSD card manipulations. There is a way to transfer files from the host PC to the Zybo using the serial interface. On the Zybo side we will use the [Busybox](https://www.busybox.net/) rx utility. As it is not enabled by default, we will first reconfigure and rebuild our root [file system](#GlossaryFileSystem):
 
-    Host> cd $SAB4Z/build/rootf
+    Host> cd $ROOT/build/rootf
     Host> make busybox-menuconfig
 
 In the [Busybox](https://www.busybox.net/) configuration menus change the following option:
@@ -725,10 +732,10 @@ In the [Busybox](https://www.busybox.net/) configuration menus change the follow
 
 Quit (save when asked), rebuild, mount the MicroSD card on the host, copy the new root [file system](#GlossaryFileSystem) image, unmount and eject the MicroSD card, plug it in the Zybo and power on:
 
-    Host> cd $SAB4Z/build/rootf
+    Host> cd $ROOT/build/rootf
     Host> make
     ...
-    Host> cp $SAB4Z/build/rootfs/images/rootfs.cpio.uboot <path-to-mounted-sd-card>/uramdisk.image.gz
+    Host> cp $ROOT/build/rootfs/images/rootfs.cpio.uboot <path-to-mounted-sd-card>/uramdisk.image.gz
     Host> umount <path-to-mounted-sd-card>
 
 On the host side we will use the sx utility. If it is not already, install it first - it is provided by the lrzsz Debian package. Launch picocom, with the `--send-cmd "sx" --receive-cmd "rx"` options, launch `rx <destination-file>` on the Zybo, press `C-a C-s` (control-a control-s) to instruct picocom to send a file from the host PC to the Zybo and provide the name of the file to send:
@@ -759,12 +766,17 @@ Do not start this part before the [toolchain](#BuildRootFs) is built: it is need
 
 The `C` sub-directory contains a very simple example C code `hello_world.c` that prints a welcome message, computes and prints the sum of the 100 first integers, waits 2 seconds, prints a good bye message and exits. Cross-compile it on your host PC:
 
-    Host> cd $SAB4Z/C
+    Host> cd $ROOT/C
     Host> ${CROSS_COMPILE}gcc -o hello_world hello_world.c
+
+Equivalently, use the provided `Makefile`:
+
+    Host> cd $ROOT/C
+    Host> make hello_world
 
 Transfer the `hello_world` binary on the Zybo (using the [network interface](#FurtherNetwork) or [another method](#FurtherFileTransfer) and execute it.
 
-    Host> cd $SAB4Z/C
+    Host> cd $ROOT/C
     Host> scp hello_world root@sab4z:
     Host> ssh root@sab4z
     Sab4z> ls
@@ -786,7 +798,7 @@ We will first rework once again our root [file system](#GlossaryFileSystem) to:
 
 <!-- -->
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> make menuconfig
 
 In the [Buildroot](https://buildroot.org/) configuration menus change the following options
@@ -803,7 +815,7 @@ Rebuild the root [file system](#GlossaryFileSystem), transfer its image to the M
 
 <!-- -->
 
-    Host> cd $SAB4Z/build/rootfs
+    Host> cd $ROOT/build/rootfs
     Host> make
     Host> scp images/rootfs.cpio.uboot root@sab4z:/mnt/uramdisk.image.gz
 
@@ -812,18 +824,26 @@ Rebuild the root [file system](#GlossaryFileSystem), transfer its image to the M
     Sab4z> umount /mnt
     Sab4z> reboot
 
-The Zybo now has everything that is needed to debug applications. Recompile the user application with debug information added, transfer the binary to the Zybo and launch gdbserver on the Zybo:
+The Zybo now has everything that is needed to debug applications. Recompile the user application with debug information added:
 
-    Host> cd $SAB4Z/C
+    Host> cd $ROOT/C
     Host> ${CROSS_COMPILE}gcc -g -o hello_world hello_world.c
+
+Equivalently, use the provided `Makefile`:
+
+    Host> cd $ROOT/C
+    Host> make CFLAGS=-g clean hello_world
+
+Transfer the binary to the Zybo and launch gdbserver on the Zybo:
+
     Host> scp hello_world root@sab4z:
     Host> ssh root@sab4z
     Sab4z> gdbserver :1234 hello_world
 
 On the host PC, launch gdb, connect to the gdbserver that runs on the Zybo and start interacting (set breakpoints, examine variables...):
 
-    Host> cd $SAB4Z/C
-    Host> cp $SAB4Z/build/rootfs/staging/usr/share/buildroot/gdbinit .
+    Host> cd $ROOT/C
+    Host> cp $ROOT/build/rootfs/staging/usr/share/buildroot/gdbinit .
     Host> ${CROSS_COMPILE}gdb -x gdbinit hello_world
     GNU gdb (GDB) 7.9.1
     ...
@@ -882,14 +902,19 @@ All this, for obvious security reasons, is privileged, but as we are root...
 
 The example C program in `C/sab4z.c` maps the STATUS and R registers of SAB4Z at a virtual address and the `[2G..2G+512M[` physical address range (that is, the DDR accessed across the PL) at another virtual address. It takes one string argument. It first prints a welcome message, then uses the mapping to print the content of STATUS and R registers. It then writes `0x12345678` in the R register and starts searching for the passed string argument in the `[2G+1M..2G+17M[` range. If it finds it, it prints all characters in a `[-20..+20[` range around the found string, and stops the search. Else, it prints a _String not found_ message. Then, it prints again STATUS and R, a good bye message and exits. Have a look at the source code and use it as a starting point for your own projects.
 
-Cross-compile the example application and transfer the executable to the Zybo:
+Cross-compile the example application:
 
-    Host> cd $SAB4Z/C
+    Host> cd $ROOT/C
     Host> ${CROSS_COMPILE}gcc -o sab4z sab4z.c
+
+Equivalently, use the provided `Makefile`:
+
+    Host> cd $ROOT/C
+    Host> make sab4z
+
+Transfer the executable to the Zybo and run the application:
+
     Host> scp sab4z root@sab4z:
-
-Run the application on the Zybo:
-
     Host> ssh root@sab4z
     Sab4z> ./sab4z barcuz
     Hello SAB4Z
@@ -901,6 +926,21 @@ Run the application on the Zybo:
     Bye! SAB4Z
 
 Apparently, the command line that we typed to launch the application, including the string argument that we passed to it, was stored in memory near address `0x806f461c`...
+
+## <a name="FurtherSab4zLinuxDriver"></a>Add a Linux driver for SAB4Z
+
+Accessing the SAB4Z hardware device using the devmem utility or a user application that maps `/dev/mem` is not very convenient. In this section we will create a Linux software driver for SAB4Z and use it to interact more conveniently with the hardware. The provided example can be found in the `C` sub-directory:
+
+    ├── libsab4z.c            User-space part of Linux driver
+    ├── libsab4z.h            User-space part of Linux driver (header)
+    ├── Makefile              Makefile for software
+    ├── sab4z_driver.c        Kernel-space part of Linux driver
+    ├── sab4z_driver.h        Kernel-space part of Linux driver (header)
+    └── test_sab4z_driver.c   Linux driver test application
+
+It handles only the STATUS and R registers. The driver is split in two parts:
+
+* The kernel space part (`sab4z_driver.h` and `sab4z_driver.c`) provides data structures and low-level functions to communicate with the SAB4Z hardware. A first set of low-level functions (sab4z\_open, sab4z\_close, sab4z\_read, sab4z\_write) implement the open, close, read and write Linux system calls, respectively, for the `/dev/sab4z` device file. A 
 
 ## <a name="FurtherRunAcrossSab4z"></a>Run the complete software stack across SAB4Z
 
@@ -916,7 +956,7 @@ All in all, we can run the software stack in the `[2G+128MB..2G+512M[` range (`[
 
 ### <a name="FurtherRunAcrossSab4zDT"></a>Modify the device tree
 
-To boot the [Linux kernel](#GlossaryLinuxKernel) and run the software stack in the `[0x8800_0000..0xa000_0000[` physical memory range we need to modify a few things. First, edit the [device tree](#GlossaryDeviceTree) source (`$SAB4Z/build/dts/system.dts`) and replace the definition of the physical memory:
+To boot the [Linux kernel](#GlossaryLinuxKernel) and run the software stack in the `[0x8800_0000..0xa000_0000[` physical memory range we need to modify a few things. First, edit the [device tree](#GlossaryDeviceTree) source (`$ROOT/build/dts/system.dts`) and replace the definition of the physical memory:
 
     memory {
         device_type = "memory";
@@ -933,7 +973,7 @@ by:
 
 Recompile the blob:
 
-    Host> cd $SAB4Z
+    Host> cd $ROOT
     Host> dtc -I dts -O dtb -o build/devicetree.dtb build/dts/system.dts
 
 When parsing the [device tree](#GlossaryDeviceTree) blob during the boot sequence, the [Linux kernel](#GlossaryLinuxKernel) will now discover that its physical memory is in the `[0x8800_0000..0xa000_0000[` range.
@@ -942,7 +982,7 @@ When parsing the [device tree](#GlossaryDeviceTree) blob during the boot sequenc
 
 The header of the [Linux kernel](#GlossaryLinuxKernel) image contains the address at which [U-Boot](http://www.denx.de/wiki/U-Boot) loads the [Linux kernel](#GlossaryLinuxKernel) image (`uImage`) and at which it jumps afterwards. Recreate the [Linux kernel](#GlossaryLinuxKernel) image with a different load address:
 
-    Host> cd $SAB4Z/build/kernel
+    Host> cd $ROOT/build/kernel
     Host> make ARCH=arm LOADADDR=0x88008000 uImage
 
 [U-Boot](http://www.denx.de/wiki/U-Boot) will now load the uncompressed [Linux kernel](#GlossaryLinuxKernel) starting at address `0x88008000`, that is, it will load it across the PL.
@@ -951,7 +991,7 @@ The header of the [Linux kernel](#GlossaryLinuxKernel) image contains the addres
 
 Last, we must instruct [U-Boot](http://www.denx.de/wiki/U-Boot) to load the [device tree](#GlossaryDeviceTree) blob, [Linux kernel](#GlossaryLinuxKernel) and root [file system](#GlossaryFileSystem) images at different addresses. And, very important, we must force it not to displace the [device tree](#GlossaryDeviceTree) blob and the root [file system](#GlossaryFileSystem) image as it does by default. This can be done by changing the default values of several [U-Boot](http://www.denx.de/wiki/U-Boot) environment variables, as specified in the provided file:
 
-    Host> cat $SAB4Z/scripts/uEnv.txt
+    Host> cat $ROOT/scripts/uEnv.txt
     devicetree_load_address=0x8a000000
     kernel_load_address=0x8a080000
     ramdisk_load_address=0x8c000000
@@ -964,7 +1004,7 @@ If [U-Boot](http://www.denx.de/wiki/U-Boot) finds a file named `uEnv.txt` on the
 
 <!-- -->
 
-    Host> cd $SAB4Z
+    Host> cd $ROOT
     Host> scp build/devicetree.dtb build/kernel/arch/arm/boot/uImage scripts/uEnv.txt root@sab4z:/mnt
 
 <!-- -->
@@ -993,17 +1033,17 @@ Xilinx tools offer several ways to debug the hardware mapped in the PL. One uses
 
 The provided synthesis script and Makefile have options to embed one ILA core to monitor all signals of the M_AXI interface of SAB4Z. The only thing to do is rerun the synthesis:
 
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> make ILA=1 vv-clean vv-all
 
 and regenerate the boot image:
 
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> bootgen -w -image scripts/boot.bif -o build/boot.bin
 
 Transfer the new boot image to the MicroSD card on the Zybo and reboot it. Launch Vivado on the host PC:
 
-    Host-Xilinx> cd $SAB4Z
+    Host-Xilinx> cd $ROOT
     Host-Xilinx> vivado build/vv/top.xpr &
 
 In the `Hardware Manager`, select `Open Target` and `Auto Connect`. The tool should now be connected to the ILA core in the PL of the Zynq of the Zybo. Select the signals to use for the trigger, for instance `top_i/sab4z_m_axi_ARVALID` and `top_i/sab4z_m_axi_ARREADY`. Configure the trigger such that it starts recording when both signals are asserted. Set the trigger position in window to 512 and run the trigger. If you are running the software stack across the PL (see section [Run the complete software stack across SAB4Z](#FurtherRunAcrossSab4z)), the trigger should be fired immediately (if it is not use the serial console to interact with the software stack and cause some read access to the DDR across the PL). If you are not running the software stack across the PL, use devmem to perform a read access to the DDR across the PL:
@@ -1028,7 +1068,7 @@ TODO
 
 Build kernel module
 
-    Host> cd $SAB4Z/C
+    Host> cd $ROOT/C
     Host> make CROSS_COMPILE=${CROSS_COMPILE} ARCH=arm KDIR=$XLINUX/build
 
 Debug kernel module
@@ -1171,7 +1211,7 @@ Redefine the variable without the `.`:
 
 If you get this error message when building [U-Boot](http://www.denx.de/wiki/U-Boot), it is probably because [U-Boot](http://www.denx.de/wiki/U-Boot) has been configured in such a way that its compilation requires the openssl header files to be installed on your host. Either they are not or the [U-Boot](http://www.denx.de/wiki/U-Boot) build system looked for them in the wrong location. The simplest way to fix this is to configure [U-Boot](http://www.denx.de/wiki/U-Boot) such that it does not need the host openssl any more:
 
-    Host> cd $SAB4Z/build/uboot
+    Host> cd $ROOT/build/uboot
     Host> make menuconfig
 
 In the [U-Boot](http://www.denx.de/wiki/U-Boot) configuration menus change the following options:
@@ -1181,7 +1221,7 @@ In the [U-Boot](http://www.denx.de/wiki/U-Boot) configuration menus change the f
 
 But of course, if you absolutely need these two options, the best workaround is to install the openssl development package on your host. Once you did one or the other, simply relaunch the [U-Boot](http://www.denx.de/wiki/U-Boot) build:
 
-    Host> cd $SAB4Z/build/uboot
+    Host> cd $ROOT/build/uboot
     Host> make -j8
 
 ### <a name="FAQ_ChangeEthAddr"></a>How can I change the Ethernet MAC address of the Zybo?

@@ -171,9 +171,10 @@ static int sab4z_remove(struct platform_device *pdev)
 	return 0;
 }
 
-/* This functions is called when the module is linked to the kernel
- * The difference with the classic init function is that we have acces to information
- * on the device defined in the device tree. This information is in the platform_device structure */
+/* This functions is called when the module is linked to the kernel The
+ * difference with the classic init function is that we have acces to
+ * information on the device defined in the device tree. This information is in
+ * the platform_device structure */
 static int sab4z_probe(struct platform_device *pdev)
 {
 	int ret = 0;
@@ -186,14 +187,15 @@ static int sab4z_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	/* Here we try to allocate the physical address space of the device. */
+  /* Here we try to allocate the physical address space of the device. */
 	remap_size = res->end - res->start + 1;
 	if(!request_mem_region(res->start, remap_size, pdev->name)) {
 		dev_err(&pdev->dev, "cannot request IO\n");
 		return -ENXIO;
 	}
 
-	/* We remap the allocated physical address space into a virtual address space */
+  /* We remap the allocated physical address space into a virtual address space
+   * */
 	base_addr = ioremap(res->start, remap_size);
 	if (base_addr == NULL) {
 		dev_err(&pdev->dev, "couldn't ioremap memory at 0x%08lx\n", (unsigned long)res->start);
@@ -245,8 +247,8 @@ err_release_region:
 	return ret;
 }
 
-/* This structure contains all the compatible strings of the devices the driver can work with
- * The last element of the list must be empty */
+/* This structure contains all the compatible strings of the devices the driver
+ * can work with The last element of the list must be empty */
 static const struct of_device_id sab4z_of_match[] = {
 	{.compatible  = "tpt,sab4z"},
 	{},
@@ -255,8 +257,9 @@ static const struct of_device_id sab4z_of_match[] = {
 /* Format the structure of_device_id */
 MODULE_DEVICE_TABLE(of, sab4z_of_match);
 
-/* We assemble all the functions and structures previously defined in this structure. 
- * It will be passed to the macro that register the module to the kernel */
+/* We assemble all the functions and structures previously defined in this
+ * structure.  It will be passed to the macro that register the module to the
+ * kernel */
 static struct platform_driver sab4z_drv = {
 	.driver = {
 		.name = DRIVER_NAME,
@@ -266,12 +269,13 @@ static struct platform_driver sab4z_drv = {
 	.remove = sab4z_remove
 };
 
-/* This macro is used to register the module to the kernel. It creates the __init and __exit functions and bind them with the 
- * module_init() and module_exit() macros */
+/* This macro is used to register the module to the kernel. It creates the
+ * __init and __exit functions and bind them with the module_init() and
+ * module_exit() macros */
 module_platform_driver(sab4z_drv);
 
 /* Macro that defines informations about the kernel module*/
 MODULE_AUTHOR("Adrien Canuel");
 MODULE_LICENSE("GPL");
-MODULE_DESCRIPTION(DRIVER_NAME ": driver de base pour SAB4Z");
+MODULE_DESCRIPTION(DRIVER_NAME ": example software driver for SAB4Z");
 MODULE_ALIAS(DRIVER_NAME);

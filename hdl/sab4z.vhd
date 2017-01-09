@@ -234,7 +234,7 @@ begin
              a     => open);
 
   -- LED outputs
-  process(status, r, btn_sd)
+  process(r, status, cnt, btn_sd)
     variable m0: std_ulogic_vector(63 downto 0);
     variable m1: std_ulogic_vector(31 downto 0);
     variable m2: std_ulogic_vector(15 downto 0);

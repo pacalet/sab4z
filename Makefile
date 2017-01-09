@@ -47,7 +47,9 @@ VVMODE		?= batch
 VIVADO		:= vivado
 VVBUILD		:= $(BUILD)/vv
 VVSCRIPT	:= $(SCRIPTS)/vvsyn.tcl
-VIVADOFLAGS	:= -mode $(VVMODE) -notrace -source $(VVSCRIPT) -tempDir /tmp -journal $(VVBUILD)/vivado.jou -log $(VVBUILD)/vivado.log -tclargs $(rootdir) $(VVBUILD) $(ILA)
+# Supported boards: zybo or zc706
+VVBOARD		?= zybo
+VIVADOFLAGS	:= -mode $(VVMODE) -notrace -source $(VVSCRIPT) -tempDir /tmp -journal $(VVBUILD)/vivado.jou -log $(VVBUILD)/vivado.log -tclargs $(rootdir) $(VVBUILD) $(VVBOARD) $(ILA)
 VVIMPL		:= $(VVBUILD)/top.runs/impl_1
 VVBIT		:= $(VVIMPL)/top_wrapper.bit
 
@@ -108,39 +110,39 @@ help:
 ms-all: $(MSTAGS)
 
 $(MSTAGS): $(MSBUILD)/%.tag: $(HDLDIR)/%.vhd
-	@echo '[MSCOM] $<'; \
-	cd $(MSBUILD); \
-	$(MSCOM) $(MSCOMFLAGS) $(rootdir)/$<; \
+	@echo '[MSCOM] $<' && \
+	cd $(MSBUILD) && \
+	$(MSCOM) $(MSCOMFLAGS) $(rootdir)/$< && \
 	touch $(rootdir)/$@
 
 $(MSTAGS): $(MSCONFIG)
 
 $(MSCONFIG):
-	@echo '[MKDIR] $(MSBUILD)'; \
-	mkdir -p $(MSBUILD); \
-	cd $(MSBUILD); \
-	$(MSLIB) .work $(OUTPUT); \
+	@echo '[MKDIR] $(MSBUILD)' && \
+	mkdir -p $(MSBUILD) && \
+	cd $(MSBUILD) && \
+	$(MSLIB) .work $(OUTPUT) && \
 	$(MSMAP) work .work $(OUTPUT)
 
 $(MSBUILD)/sab4z.tag: $(MSBUILD)/axi_pkg.tag $(MSBUILD)/debouncer.tag
 
 ms-clean:
-	@echo '[RM] $(MSBUILD)'; \
+	@echo '[RM] $(MSBUILD)' && \
 	rm -rf $(MSBUILD)
 
 # Xilinx Vivado
 vv-all: $(VVBIT)
 
 $(VVBIT): $(HDLSRCS) $(VVSCRIPT)
-	@echo '[VIVADO] $(VVSCRIPT)'; \
-	mkdir -p $(VVBUILD); \
+	@echo '[VIVADO] $(VVSCRIPT)' && \
+	mkdir -p $(VVBUILD) && \
 	$(VIVADO) $(VIVADOFLAGS)
 
 $(SYSDEF):
 	@$(MAKE) vv-all
 
 vv-clean:
-	@echo '[RM] $(VVBUILD)'; \
+	@echo '[RM] $(VVBUILD)' && \
 	rm -rf $(VVBUILD)
 
 # Device tree
@@ -148,37 +150,43 @@ dts: $(DTSTOP)
 
 $(DTSTOP): $(SYSDEF) $(DTSSCRIPT)
 	@if [ ! -d $(XDTS) ]; then \
-		echo 'Xilinx device tree source directory $(XDTS) not found.'; \
+		echo 'Xilinx device tree source directory $(XDTS) not found.' && \
 		exit -1; \
-	fi; \
-	echo '[HSI] $< --> $(DTSBUILD)'; \
+	fi && \
+	echo '[HSI] $< --> $(DTSBUILD)' && \
 	$(HSI) $(DTSFLAGS) -source $(DTSSCRIPT) -tclargs $(SYSDEF) $(XDTS) $(DTSBUILD) $(OUTPUT)
 
 dts-clean:
-	@echo '[RM] $(DTSBUILD)'; \
+	@echo '[RM] $(DTSBUILD)' && \
 	rm -rf $(DTSBUILD)
 
 # First Stage Boot Loader (FSBL)
 fsbl: $(FSBLTOP)
 
 $(FSBLTOP): $(SYSDEF) $(FSBLSCRIPT)
-	@echo '[HSI] $< --> $(FSBLBUILD)'; \
+	@echo '[HSI] $< --> $(FSBLBUILD)' && \
 	$(HSI) $(FSBLFLAGS) -source $(FSBLSCRIPT) -tclargs $(SYSDEF) $(FSBLBUILD) $(OUTPUT)
 
 fsbl-clean:
-	@echo '[RM] $(FSBLBUILD)'; \
+	@echo '[RM] $(FSBLBUILD)' && \
 	rm -rf $(FSBLBUILD)
 
 # Documentation
 FIG2DEV		:= fig2dev
 FIG2DEVFLAGS	:= -Lpng -m2.0 -S4
+FIGS		:= $(wildcard images/*.fig)
+PNGS		:= $(patsubst %.fig,%.png,$(FIGS))
 
-doc: images/sab4z.png
+doc: $(PNGS)
 
-images/sab4z.png: images/sab4z.fig
+$(PNGS): %.png: %.fig
 	$(FIG2DEV) $(FIG2DEVFLAGS) $< $@
 
+doc-clean:
+	@echo '[RM] $(PNGS)' && \
+	rm -rf $(PNGS)
+
 # Full clean
-clean: ms-clean vv-clean dts-clean fsbl-clean doc-clean
-	@echo '[RM] $(BUILD)'; \
+clean: ms-clean vv-clean dts-clean fsbl-clean
+	@echo '[RM] $(BUILD)' && \
 	rm -rf $(BUILD)

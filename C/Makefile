@@ -40,7 +40,7 @@ module:
 all: hello_world sab4z module test_sab4z_driver
 
 %.o: %.c
-	$(CROSS_COMPILE)gcc -c -o $@ $<
+	$(CROSS_COMPILE)gcc $(CFLAGS) -c -o $@ $<
 
 libsab4z.o: libsab4z.h
 

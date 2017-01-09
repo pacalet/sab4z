@@ -9,20 +9,67 @@
 #
 
 proc usage {} {
-	puts "usage: vivado -mode batch -source <script> -tclargs <rootdir> <builddir> \[<ila>\]"
+	puts "usage: vivado -mode batch -source <script> -tclargs <rootdir> <builddir> \[<board>\] \[<ila>\]"
 	puts "  <rootdir>:  absolute path of sab4z root directory"
 	puts "  <builddir>: absolute path of build directory"
+	puts "  <board>:    target board (zybo or zc706, default zybo)"
 	puts "  <ila>:      embed Integrated Logic Analyzer (0 or 1, default 0)"
 	exit -1
 }
 
-if { $argc == 3 } {
+if { $argc == 4 } {
 	set rootdir [lindex $argv 0]
 	set builddir [lindex $argv 1]
-	set ila [lindex $argv 2]
+	set board [lindex $argv 2]
+	if { [ string equal $board "zybo" ] } {
+		set part "xc7z010clg400-1"
+		set board "digilentinc.com:zybo:part0:1.0"
+		array set ios {
+			"sw[0]"         { "G15" "LVCMOS33" }
+			"sw[1]"         { "P15" "LVCMOS33" }
+			"sw[2]"         { "W13" "LVCMOS33" }
+			"sw[3]"         { "T16" "LVCMOS33" }
+			"led[0]"        { "M14" "LVCMOS33" }
+			"led[1]"        { "M15" "LVCMOS33" }
+			"led[2]"        { "G14" "LVCMOS33" }
+			"led[3]"        { "D18" "LVCMOS33" }
+			"btn"           { "R18" "LVCMOS33" }
+		}
+	} elseif { [ string equal $board "zc706" ] } { 
+		set part "xc7z045ffg900-2"
+		set board "xilinx.com:zc706:part0:1.3"
+		array set ios {
+			"sw[0]"         { "AB17" "LVCMOS25" }
+			"sw[1]"         { "AC16" "LVCMOS25" }
+			"sw[2]"         { "AC17" "LVCMOS25" }
+			"sw[3]"         { "AJ13" "LVCMOS25" }
+			"led[0]"        { "Y21"  "LVCMOS25" }
+			"led[1]"        { "G2"   "LVCMOS15" }
+			"led[2]"        { "W21"  "LVCMOS25" }
+			"led[3]"        { "A17"  "LVCMOS15" }
+			"btn"           { "AK25" "LVCMOS25" }
+		}
+	} else {
+		usage
+	}
+	set ila [lindex $argv 3]
 	if { $ila != 0 && $ila != 1 } {
 		usage
 	}
+	puts "*********************************************"
+	puts "Summary of build parameters"
+	puts "*********************************************"
+	puts "Board: $board"
+	puts "Part: $part"
+	puts "Root directory: $rootdir"
+	puts "Build directory: $builddir"
+	puts -nonewline "Integrated Logic Analyzer: "
+	if { $ila == 0 } {
+		puts "no"
+	} else {
+		puts "yes"
+	}
+	puts "*********************************************"
 } else {
 	usage
 }
@@ -33,7 +80,7 @@ source $rootdir/scripts/ila.tcl
 ###################
 # Create SAB4Z IP #
 ###################
-create_project -part xc7z010clg400-1 -force sab4z sab4z
+create_project -part $part -force sab4z sab4z
 add_files $rootdir/hdl/axi_pkg.vhd $rootdir/hdl/debouncer.vhd $rootdir/hdl/sab4z.vhd
 import_files -force -norecurse
 ipx::package_project -root_dir sab4z -vendor www.telecom-paristech.fr -library SAB4Z -force sab4z
@@ -43,8 +90,8 @@ close_project
 ## Create top level design #
 ############################
 set top top
-create_project -part xc7z010clg400-1 -force $top .
-set_property board_part digilentinc.com:zybo:part0:1.0 [current_project]
+create_project -part $part -force $top .
+set_property board_part $board [current_project]
 set_property ip_repo_paths { ./sab4z } [current_fileset]
 update_ip_catalog
 create_bd_design "$top"
@@ -120,17 +167,6 @@ if { $ila == 1 } {
 }
 
 # IOs
-array set ios {
-	"sw[0]"		{ "G15" "LVCMOS33" }
-	"sw[1]"		{ "P15" "LVCMOS33" }
-	"sw[2]"		{ "W13" "LVCMOS33" }
-	"sw[3]"		{ "T16" "LVCMOS33" }
-	"led[0]"	{ "M14" "LVCMOS33" }
-	"led[1]"	{ "M15" "LVCMOS33" }
-	"led[2]"	{ "G14" "LVCMOS33" }
-	"led[3]"	{ "D18" "LVCMOS33" }
-	"btn"		{ "R18" "LVCMOS33" }
-}
 foreach io [ array names ios ] {
 	set pin [ lindex $ios($io) 0 ]
 	set std [ lindex $ios($io) 1 ]

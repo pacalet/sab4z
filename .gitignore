@@ -1,6 +1,14 @@
 /build/
 /C/*.o
+/C/*.o.cmd
+/C/*.ko
+/C/*.ko.cmd
+/C/*.mod.c
+/C/.tmp_versions/
 /C/hello_world
 /C/sab4z
+/C/test_sab4z_driver
+/C/Module.symvers
+/C/modules.order
 .*.swp
 /images/*.fig.bak
