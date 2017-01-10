@@ -25,13 +25,13 @@ OUTPUT	:=
 endif
 
 rootdir		:= $(realpath .)
-BUILD		:= build
+BUILD		?= build
 HDLDIR		:= hdl
 HDLSRCS		:= $(wildcard $(HDLDIR)/*.vhd)
 SCRIPTS		:= scripts
 
 # Mentor Graphics Modelsim
-MSBUILD		:= $(BUILD)/ms
+MSBUILD		?= $(BUILD)/ms
 MSCONFIG	:= $(MSBUILD)/modelsim.ini
 MSLIB		:= vlib
 MSMAP		:= vmap
@@ -45,7 +45,7 @@ MSTAGS		:= $(patsubst $(HDLDIR)/%.vhd,$(MSBUILD)/%.tag,$(HDLSRCS))
 ILA		?= 0
 VVMODE		?= batch
 VIVADO		:= vivado
-VVBUILD		:= $(BUILD)/vv
+VVBUILD		?= $(BUILD)/vv
 VVSCRIPT	:= $(SCRIPTS)/vvsyn.tcl
 # Supported boards: zybo or zc706
 VVBOARD		?= zybo
@@ -59,11 +59,11 @@ HSI			:= hsi
 SYSDEF			:= $(VVIMPL)/top_wrapper.sysdef
 DTSSCRIPT		:= $(SCRIPTS)/dts.tcl
 DTSFLAGS		:= -mode batch -quiet -notrace -nojournal -nolog -tempDir /tmp
-DTSBUILD		:= $(BUILD)/dts
+DTSBUILD		?= $(BUILD)/dts
 DTSTOP			:= $(DTSBUILD)/system.dts
 FSBLSCRIPT		:= $(SCRIPTS)/fsbl.tcl
 FSBLFLAGS		:= -mode batch -quiet -notrace -nojournal -nolog -tempDir /tmp
-FSBLBUILD		:= $(BUILD)/fsbl
+FSBLBUILD		?= $(BUILD)/fsbl
 FSBLTOP			:= $(FSBLBUILD)/main.c
 
 # Messages
@@ -91,10 +91,16 @@ directories:
   FSBL sources         ./$(FSBLBUILD)
 
 customizable make variables:
-  DEBUG   debug level: 0=none, 1: some, 2: verbose ($(DEBUG))
-  XDTS    clone of Xilinx device trees git repository ($(XDTS))
-  ILA     embed Integrated Logic Analyzer (0 or 1) ($(ILA))"
-  VVMODE  Vivado running mode (gui, tcl or batch) ($(VVMODE))"
+  DEBUG       debug level: 0=none, 1: some, 2: verbose ($(DEBUG))
+  BUILD       main build directory ($(BUILD))
+  MSBUILD     build directory for Mentor Graphics Modelsim ($(MSBUILD))
+  ILA         embed Integrated Logic Analyzer (0 or 1) ($(ILA))"
+  VVMODE      Vivado running mode (gui, tcl or batch) ($(VVMODE))"
+  VVBUILD     build directory for Xilinx Vivado ($(VVBUILD))
+  VVBOARD     target board (zybo, zed or zc706) ($(VVBOARD))"
+  XDTS        clone of Xilinx device trees git repository ($(XDTS))
+  DTSBUILD    build directory for the device tree ($(DTSBUILD))
+  FSBLBUILD   build directory for the First Stage Boot Loader ($(FSBLBUILD))
 endef
 export HELP_message
 

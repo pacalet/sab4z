@@ -12,7 +12,7 @@ proc usage {} {
 	puts "usage: vivado -mode batch -source <script> -tclargs <rootdir> <builddir> \[<board>\] \[<ila>\]"
 	puts "  <rootdir>:  absolute path of sab4z root directory"
 	puts "  <builddir>: absolute path of build directory"
-	puts "  <board>:    target board (zybo or zc706, default zybo)"
+	puts "  <board>:    target board (zybo, zed or zc706, default zybo)"
 	puts "  <ila>:      embed Integrated Logic Analyzer (0 or 1, default 0)"
 	exit -1
 }
@@ -34,6 +34,20 @@ if { $argc == 4 } {
 			"led[2]"        { "G14" "LVCMOS33" }
 			"led[3]"        { "D18" "LVCMOS33" }
 			"btn"           { "R18" "LVCMOS33" }
+		}
+	} elseif { [ string equal $board "zed" ] } { 
+		set part "xc7z020clg484-1"
+		set board "em.avnet.com:zed:part0:1.3"
+		array set ios {
+			"sw[0]"         { "F22"  "LVCMOS25" }
+			"sw[1]"         { "G22"  "LVCMOS25" }
+			"sw[2]"         { "H22"  "LVCMOS25" }
+			"sw[3]"         { "F21"  "LVCMOS25" }
+			"led[0]"        { "T22"  "LVCMOS33" }
+			"led[1]"        { "T21"  "LVCMOS33" }
+			"led[2]"        { "U22"  "LVCMOS33" }
+			"led[3]"        { "U21"  "LVCMOS33" }
+			"btn"           { "T18"  "LVCMOS25" }
 		}
 	} elseif { [ string equal $board "zc706" ] } { 
 		set part "xc7z045ffg900-2"
