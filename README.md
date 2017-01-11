@@ -1,4 +1,6 @@
-This repository and its sub-directories contain the VHDL source code, VHDL simulation environment, simulation, synthesis scripts and companion example software for SAB4Z, a simple design example for the Xilinx Zynq core. It can be ported on any board based on Xilinx Zynq cores but has been specifically designed for the Zybo board by Digilent. All provided instructions are for a host computer running a GNU/Linux operating system and have been tested on a Debian 8 (jessie) distribution. Porting to other GNU/Linux distributions should be very easy. If you are working under Microsoft Windows or Apple Mac OS X, installing a virtualization framework and running a Debian OS in a virtual machine is probably the easiest path.
+This repository and its sub-directories contain the VHDL source code, VHDL simulation environment, simulation scripts, synthesis scripts and companion example software for SAB4Z, a simple design example for the Xilinx Zynq core. It can be ported on any board based on Xilinx Zynq cores but has been specifically designed for the Zybo board by Digilent, the ZedBoard and the Xilinx ZC706 board.
+
+All provided instructions are for a host computer running a GNU/Linux operating system and have been tested on a Debian 8 (jessie) distribution. Porting to other GNU/Linux distributions should be very easy. If you are working under Microsoft Windows or Apple Mac OS X, installing a virtualization framework and running a Debian OS in a virtual machine is probably the easiest path.
 
 Please signal errors and send suggestions for improvements to renaud.pacalet@telecom-paristech.fr.
 
@@ -73,9 +75,9 @@ http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
     │   ├── debouncer.vhd         Debouncer-resynchronizer
     │   └── sab4z.vhd             Top-level SAB4Z
     ├── images                    Figures
-    │   ├── sab4z.fig             SAB4Z in Zybo
+    │   ├── sab4z.fig             SAB4Z in Zynq
     │   ├── sab4z.png             PNG export of sab4z.fig
-    │   └── zybo.png              Zybo board
+    │   └── zybo.png              Zybo board picture
     ├── Makefile                  Main makefile
     ├── README.md                 This file
     └── scripts                   Scripts
@@ -88,21 +90,27 @@ http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
 
 # <a name="Description"></a>Description
 
-**SAB4Z** is a **S**imple **A**xi-to-axi **B**ridge **F**or **Z**ynq cores with a lite [AXI](#GlossaryAxi) slave port (S0_AXI) an [AXI](#GlossaryAxi) slave port (S1_AXI), a master [AXI](#GlossaryAxi) port (M_AXI), two internal registers (STATUS and R), a 4-bits input (SW), a 4-bits output (LED) and a one-bit command input (BTN). Its VHDL synthesizable model is available in the `hdl` sub-directory. The following figure represents SAB4Z mapped in the Programmable Logic (PL) of the Zynq core of a Zybo board. SAB4Z is connected to the Processing System (PS) of the Zynq core by the 3 [AXI](#GlossaryAxi) ports. When the ARM processor of the PS reads or writes at addresses in the `[0..1G[` range (first giga byte) it accesses the DDR memory of the Zybo (512MB), directly through the DDR controller. When the addresses fall in the `[1G..2G[` or `[2G..3G[` ranges, it accesses SAB4Z, through its S0_AXI and S1_AXI ports, respectively. SAB4Z can also access the DDR in the `[0..1G[` range, thanks to its M_AXI port. The four slide switches, LEDs and the rightmost push-button (BTN0) of the board are connected to the SW input, the LED output and the BTN input of SAB4Z, respectively.
+**SAB4Z** is a **S**imple **A**xi-to-axi **B**ridge **F**or **Z**ynq cores with a lite [AXI](#GlossaryAxi) slave port (S0_AXI) an [AXI](#GlossaryAxi) slave port (S1_AXI), a master [AXI](#GlossaryAxi) port (M_AXI), two internal registers (STATUS and R), a 4-bits input (SW), a 4-bits output (LED) and a one-bit command input (BTN). Its VHDL synthesizable model is available in the `hdl` sub-directory. The following figure represents SAB4Z mapped in the Programmable Logic (PL) of the Zynq core.
 
-![SAB4Z on a Zybo board](images/sab4z.png)
+![SAB4Z on a Zynq-based board](images/sab4z.png)
 
-As shown on the figure, the accesses from the PS that fall in the `[2G..3G[` range (S1_AXI) are forwarded to M_AXI with an address down-shift from `[2G..3G[` to `[0..1G[`. The responses from M_AXI are forwarded back to S1_AXI. This path is thus a second way to access the DDR from the PS, across the PL. From the PS viewpoint each address in the `[0..1G[` range has an equivalent address in the `[2G..3G[` range.
+SAB4Z is connected to the Processing System (PS) of the Zynq core by the 3 [AXI](#GlossaryAxi) ports. When the ARM processor of the PS reads or writes at addresses in the `[0..1G[` range (first giga byte) it accesses the DDR memory of the board (512MB on Zybo and ZedBoard, 1GB on ZC706), directly through the DDR controller. In the following we will refer to this range as the _Regular Memory Address Space_ (RMAS). When the addresses fall in the `[1G..2G[` or `[2G..3G[` ranges, it accesses SAB4Z, through its S0_AXI and S1_AXI ports, respectively. SAB4Z can also access the DDR in the `[0..1G[` range, thanks to its M_AXI port.
 
-The Zybo board has only 512MB of DDR but the routing of the board and the way the DDR chip is connected to the Zynq core aliases the `[512M..1G[` range to the `[0..512M[` range. Each DDR location can thus be accessed with 4 different addresses in the `[0..512M[`, `[512M..1G[`, `[2G..2G+512M[` or `[2G+512M..3G[` ranges...
+## Memory address spaces
 
-...Except that, depending on the configuration, Zynq-based systems have a reserved low addresses range that cannot be accessed from the PL. In our case this low range is the first 512kB (`[0..512k[`). A consequence of this is that the low 512kB of DDR memory can be accessed directly by the processor in the `[0..512k[` range but not in the `[2G..2G+512k[` range because it would be down-shifted to `[0..512k[` by SAB4Z (in the PL) before forwarding the access, and errors would be raised. Thanks to the 512MB limitation of the Zybo and to the aliasing, this range can be accessed in the `[2G+512M..2G+512M+512k[` range.
+As shown on the figure, the accesses from the PS that fall in the `[2G..3G[` range (S1_AXI) are forwarded to M_AXI with an address down-shift from `[2G..3G[` to `[0..1G[`. The responses from M_AXI are forwarded back to S1_AXI. This path is thus a second way to access the `[0..1G[` range from the PS, across the PL. From the PS viewpoint each address in the `[0..1G[` range has an equivalent address in the `[2G..3G[` range. In the following we will refer to this range as the _Alternate Memory Address Space_ (AMAS).
 
-Last but not least, randomly modifying the content of the memory using the `[2G..3G[` range can crash the system or lead to unexpected behaviours if the modified region is currently in use by the currently running software stack.
+**Important remark**: there is one important limitation to this one-to-one address equivalence between the RMAS and the AMAS. Zynq cores have a reserved low addresses range that cannot be accessed from the PL. In our case this low range is the first 512kB (`[0..512k[`). As a consequence, the low 512kB of DDR (`[0..512k[`) can be accessed directly by the processor in the RMAS, but not in the supposedly equivalent AMAS, because it would be down-shifted to `[0..512k[` by SAB4Z before forwarding the access to the M_AXI port, and errors would be raised.
 
-The M_AXI port that SAB4Z uses to access the DDR is not cache-coherent and the `[2G..3G[` range is, by default, not cacheable. Reading or writing in the `[2G..3G[` range is thus not strictly equivalent to reading or writing in the `[0..1G[` range.
+**Important remark**: the M_AXI port that SAB4Z uses to access the DDR is not cache-coherent and the `[2G..3G[` range is, by default, not cacheable. There is thus a second limitation to the equivalence between RMAS and AMAS and reading or writing in the AMAS is thus not exactly the same as reading or writing in RMAS.
 
-The [AXI](#GlossaryAxi) slave port S0_AXI is used to access the internal registers. The mapping of the S0_AXI address space is the following:
+**Important remark**: the Zybo and ZedBoard boards have only 512MB of DDR (while the ZC706 has 1GB), but the way the DDR chips are connected to the Zynq core aliases the `[512M..1G[` range to the `[0..512M[` range. Each DDR location can thus be accessed directly by the processor with 2 different addresses in RMAS: one in the `[0..512M[` range and the other in the  `[512M..1G[` range. As a consequence, there is a very simple workaround for the previously mentioned limitation about the first 512kB, which is to access the DDR through SAB4Z in the PL using the `[2G+512M..3G[` range instead of `[2G..2G+512M[`. The addresses will be first down-shifted to `[512M..1G[` before being forwarded to the M_AXI port, and finally aliased to `[0..512M[` by the routing of the board. We will use this property in the [Run the complete software stack across SAB4Z](#FurtherRunAcrossSab4z) part of this tutorial. On the ZC706 board, however, the limitation is unavoidable and the first 512kB of the 1GB DDR cannot be accessed by the processor in the AMAS.
+
+**Important remark**: last but not least, randomly modifying the content of the memory using the AMAS can crash the system or lead to unexpected behaviours if the modified region is currently in use by the currently running software stack.
+
+## Control address space
+
+As shown on the figure, the `[1G..2G[` address space, referred to as _Control Address Space_ (CAS) in the following, is mapped to the S0_AXI [AXI](#GlossaryAxi) slave port. In SAB4Z, it is used to access the internal registers. The mapping of the CAS address space is the following:
 
 | Address       | Mapping     | Description                                 | 
 | :------------ | :---------- | :------------------------------------------ | 
@@ -112,27 +120,47 @@ The [AXI](#GlossaryAxi) slave port S0_AXI is used to access the internal registe
 | ...           | ...         |                                             | 
 | `0x7fff_fffc` | Unmapped    |                                             | 
 
-The two registers are subdivided in 16 four-bits nibbles, indexed from 0, for the four Least Significant Bits (LSBs) of STATUS, to 15, for the four Most Significant Bits (MSBs) of R. The organization of the registers is the following:
+Accesses to the unmapped region of the CAS (`[1G+8..2G[`) raise DECERR [AXI](#GlossaryAxi) errors. Write accesses to the read-only STATUS register raise SLVERR [AXI](#GlossaryAxi) errors.
+
+The two registers are subdivided in 16 four-bits nibbles, indexed from 0, for the 4 Least Significant Bits (LSBs) of STATUS, to 15, for the 4 Most Significant Bits (MSBs) of R. The organization of the registers is the following:
 
 | Register | Nibble | Bits     | Field name | Role                                          |
 | :------- | -----: | -------: | :--------- | :-------------------------------------------- |
 | STATUS   |      0 |  `3...0` | LIFE       | Rotating bit (life monitor)                   |
-| ...      |      1 |  `7...4` | CNT        | Counter of BTN events                         |
+| ...      |      1 |  `7...4` | CNT        | Counter of BTN rising edges                   |
 | ...      |      2 | `11...8` | ARCNT      | Counter of S1_AXI address-read transactions   |
 | ...      |      3 | `15..12` | RCNT       | Counter of S1_AXI data-read transactions      |
 | ...      |      4 | `19..16` | AWCNT      | Counter of S1_AXI address-write transactions  |
 | ...      |      5 | `23..20` | WCNT       | Counter of S1_AXI data-write transactions     |
 | ...      |      6 | `27..24` | BCNT       | Counter of S1_AXI write-response transactions |
-| STATUS   |      7 | `31..28` | SW         | Current configuration of slide-switches       |
+| STATUS   |      7 | `31..28` | SW         | Current configuration of SW input             |
 | R        |      8 |   `3..0` | R0         | General purpose                               |
 | ...      |    ... | ...      | ...        | ...                                           |
 | R        |     15 | `31..28` | R7         | General purpose                               |
 
-CNT is a 4-bits counter. It is initialized to zero after reset. Each time the BTN push-button is pressed, CNT is incremented (modulus 16). The LEDs are driven by CNT when BTN is pressed (a way to check the value of the counter) and by nibble number CNT when the button is not pressed. The BTN input is filtered by a debouncer-resynchronizer before being used to increment CNT.
+CNT is a 4-bits counter. It is initialized to zero after reset. Each time there is a rising edge on the BTN input, CNT is incremented (modulus 16). When BTN is high, the 4-bits LED output is driven by CNT (a way to check the current value of the counter). When BTN is low, the 4-bits LED output is driven by nibble number CNT. The BTN input is filtered by a debouncer-resynchronizer before being used to increment CNT.
 
-Accesses to the unmapped region of the S0_AXI `[1G+8..2G[` address space raise DECERR [AXI](#GlossaryAxi) errors. Write accesses to the read-only STATUS register raise SLVERR [AXI](#GlossaryAxi) errors.
+## IO mapping
 
-# <a name="Archive"></a>Install from the archive
+The mapping of the SAB4Z inputs and outputs on board instances depends on the target board. On the Zybo, for example, the 4-bits SW input, the BTN input and the 4-bits LED output of SAB4Z are connected to the 4 slide switches (SW0, SW1, SW2, SW3), the rightmost push-button (BTN0) and the 4 LEDs (LD0, LD1, LD2, LD3), respectively. The following figure represents the Zybo board:
+
+![The Zybo board](images/zybo1.png)
+
+The following table summarizes the IO mapping for the currently supported boards:
+
+| Board    | IO   | Board instances                           |
+| :------- | :--- | :---------------------------------------- |
+| Zybo     | SW   | SW0-SW3 (4 user slide switches)           |
+| Zybo     | BTN  | BTN0 (rightmost user push-button)         |
+| Zybo     | LED  | LD0-LD3 (4 user LEDs)                     |
+| ZedBoard | SW   | SW0-SW3 (4 rightmost user slide switches) |
+| ZedBoard | BTN  | BTNR (right push-button of 5-buttons pad) |
+| ZedBoard | LED  | LD0-LD3 (4 rightmost user LEDs)           |
+| ZC706    | SW   | SW12 (4 DIP switches)                     |
+| ZC706    | BTN  | SW8 (rightmost user push-button)          |
+| ZC706    | LED  | DS8-DS10, DS35 (4 user LEDs)              |
+
+# <a name="Archive"></a>Installing SAB4Z from the archive
 
 In the following example code blocks we will use different prompts for the different contexts:
 
@@ -157,7 +185,7 @@ Eject the MicroSD card.
 * Plug the MicroSD card in the Zybo and connect the USB cable.
 * Check the position of the jumper that selects the power source (USB or power adapter).
 * Check the position of the jumper that selects the boot medium (MicroSD card).
-* Power on. Two new [character devices](#GlossaryFt2232hCharDev) should show up (`/dev/ttyUSB0` and `/dev/ttyUSB1` by default) on the host PC. `/dev/ttyUSB1` is teh one corresponding to the serial link with the Zybo.
+* Power on. Two new [character devices](#GlossaryFt2232hCharDev) should show up (`/dev/ttyUSB0` and `/dev/ttyUSB1` by default) on the host PC. `/dev/ttyUSB1` is the one corresponding to the serial link with the Zybo.
 * Launch a [terminal emulator](#GlossaryTerminalEmulator) (picocom, minicom...) and attach it to the new [character device](#GlossaryFt2232hCharDev), with a 115200 baudrate, no flow control, no parity, 8 bits characters, no port reset and no port locking: `picocom -b115200 -fn -pn -d8 -r -l /dev/ttyUSB1`.
 * Wait until [Linux](#GlossaryLinuxKernel) boots, log in as root (there is no password) and start interacting with SAB4Z.
 
@@ -232,7 +260,7 @@ Always halt properly before switching the power off:
 
 # <a name="Build"></a>Build everything from scratch
 
-The embedded system world sometimes looks overcomplicated to non-specialists. But most of this complexity comes from the large number of small things that make this world, not really from the complexity of these small things themselves. Understanding large portions of this exciting field is perfectly feasible, even without a strong background in computer sciences. And, of course, doing things alone is probably one of the best ways to understand them. In the following we will progressively build a complete computer system based on the Zybo board, with custom hardware extensions, and running a GNU/Linux operating system.
+The embedded system world sometimes looks overcomplicated to non-specialists. But most of this complexity comes from the large number of small things that make this world, not really from the complexity of these small things themselves. Understanding large portions of this exciting field is perfectly feasible, even without a strong background in computer sciences. And, of course, doing things alone is probably one of the best ways to understand them. In the following we will progressively build a complete computer system based on a Zynq-based board, with custom hardware extensions, and running a GNU/Linux operating system.
 
 You will need the Xilinx tools (Vivado and its companion SDK). The version that we used when designing this tutorial was `2016.3`. More recent versions should be OK but may require small modifications of the `scripts/vvsyn.tcl` synthesis script. In the following we assume that the Xilinx tools are properly installed.
 
@@ -268,7 +296,9 @@ The hardware synthesis produces a bitstream file from the VHDL source code in `h
     Host-Xilinx> make help
     Host-Xilinx> make VVBUILD=/opt/builds/vv VVBOARD=zybo vv-all
 
-The generated bitstream is `/opt/builds/vv/top.runs/impl_1/top_wrapper.bit`. This binary file is used to configure the FPGA part of the Zynq core of the Zybo board such that it implements our VHDL design. A binary description of our hardware design is also available in `/opt/builds/vv/top.runs/impl_1/top_wrapper.sysdef`. It is not human-readable but we will use it later to generate the [device tree](#GlossaryDeviceTree) sources and the [First Stage Boot Loader](#GlossaryFsbl) (FSBL) sources.
+(replace `VVBOARD=zybo` by `VVBOARD=zed` or `VVBOARD=zc706` if your board is not the Zybo).
+
+The generated bitstream is `/opt/builds/vv/top.runs/impl_1/top_wrapper.bit`. This binary file is used to configure the FPGA part of the Zynq core of the board such that it implements our VHDL design. A binary description of our hardware design is also available in `/opt/builds/vv/top.runs/impl_1/top_wrapper.sysdef`. It is not human-readable but we will use it later to generate the [device tree](#GlossaryDeviceTree) sources and the [First Stage Boot Loader](#GlossaryFsbl) (FSBL) sources.
 
 ## <a name="BuildToolChain"></a>Build a cross-compilation toolchain
 
@@ -352,9 +382,9 @@ That's it. We now have a complete toolchain for 32 bits ARM processors with hard
 
 Do not start this part before the [toolchain](#BuildToolChain) is built: it is needed.
 
-Just like your host, our Zybo computer needs a root [file system](#GlossaryFileSystem) to run a decent operating system like GNU/Linux. We will use [Buildroot](https://buildroot.org/) to build and populate a [Busybox](https://www.busybox.net/)-based, tiny, [initramfs](#GlossaryInitramfs) root [file system](#GlossaryFileSystem). In other notes will will explore other types of root [file systems](#GlossaryFileSystem) (networked [file systems](#GlossaryFileSystem), [file systems](#GlossaryFileSystem) on the MicroSD card...) but as [initramfs](#GlossaryInitramfs) is probably the simplest of all, let us start with this one.
+Just like your host, our Zybo computer needs a root [file system](#GlossaryFileSystem) to run a decent operating system like GNU/Linux. We will use [Buildroot](https://buildroot.org/) to build and populate a [Busybox](https://www.busybox.net/)-based, tiny, [initramfs](#GlossaryInitramfs) root [file system](#GlossaryFileSystem). In other notes we will explore other types of root [file systems](#GlossaryFileSystem) (networked [file systems](#GlossaryFileSystem), [file systems](#GlossaryFileSystem) on the MicroSD card...) but as [initramfs](#GlossaryInitramfs) is probably the simplest of all, let us start with this one.
 
-[Buildroot](https://buildroot.org/) is a very nice and easy to use toolbox dedicated to the creation of root [file systems](#GlossaryFileSystem) for many different target embedded systems. It can also build [Linux kernels](#GlossaryLinuxKernel) and other useful software but we will use it only to generate our root [file system](#GlossaryFileSystem). [Buildroot](https://buildroot.org/) has no default configuration for the Zybo board but the ZedBoard (another very common board based on Xilinx Zynq cores) default configuration works also for the Zybo. First create and prepare a build directory for our root [file systems](#GlossaryFileSystem):
+[Buildroot](https://buildroot.org/) is a very nice and easy to use toolbox dedicated to the creation of root [file systems](#GlossaryFileSystem) for many different target embedded systems. It can also build [Linux kernels](#GlossaryLinuxKernel) and other useful software but we will use it only to generate our root [file system](#GlossaryFileSystem). [Buildroot](https://buildroot.org/) has default configurations for the Zybo board, the ZedBoard and the ZC706 board. First create and prepare a build directory for our root [file systems](#GlossaryFileSystem):
 
     Host> mkdir -p /opt/builds/rootfs
     Host> cd /opt/builds/rootfs
@@ -374,7 +404,9 @@ Then, clone [Buildroot](https://buildroot.org/) and use it to create a default c
     ...
     Host> git checkout 2016.11.1
     Host> git checkout -b mybranch-2016.11.1
-    Host> make BR2_EXTERNAL=/opt/builds/rootfs O=/opt/builds/rootfs zynq_zed_defconfig
+    Host> make BR2_EXTERNAL=/opt/builds/rootfs O=/opt/builds/rootfs zynq_zybo_defconfig
+
+(replace `zynq_zybo_defconfig` by `zynq_zed_defconfig` or `zynq_zc706_defconfig` to reflect your own board).
 
 Let us now customize the default configuration to:
 
@@ -388,7 +420,7 @@ Let us now customize the default configuration to:
 1. Customize the welcome banner,
 1. Specify an overlay directory (a convenient way to customize the built root [file system](#GlossaryFileSystem)) in `/opt/builds/rootfs/overlays`,
 1. Skip [Linux kernel](#GlossaryLinuxKernel) build (we will use the [Linux kernel](#GlossaryLinuxKernel) from the Xilinx git repository),
-1. Skip [U-Boot](http://www.denx.de/wiki/U-Boot) build (we will the [U-Boot](http://www.denx.de/wiki/U-Boot) from the Xilinx git repository).
+1. Skip [U-Boot](http://www.denx.de/wiki/U-Boot) build (we will use the [U-Boot](http://www.denx.de/wiki/U-Boot) from the Xilinx git repository).
 
 Launch the configuration tool:
 
@@ -493,7 +525,7 @@ And just like for the root [file system](#GlossaryFileSystem), none of these is 
     Host> cd /opt/builds/kernel
     Host> make ARCH=arm LOADADDR=0x8000 uImage
 
-The result is in `/opt/builds/kernel/arch/arm/boot/uImage` and, as its size shows, it the same as `/opt/builds/kernel/arch/arm/boot/zImage` with a 64 bytes [U-Boot](http://www.denx.de/wiki/U-Boot) header added:
+The result is in `/opt/builds/kernel/arch/arm/boot/uImage` and, as its size shows, it is the same as `/opt/builds/kernel/arch/arm/boot/zImage` with a 64 bytes [U-Boot](http://www.denx.de/wiki/U-Boot) header added:
 
 
     Host> cd /opt/builds/kernel
@@ -559,6 +591,8 @@ Let us first clone [U-Boot](http://www.denx.de/wiki/U-Boot) and create a default
     Host> git checkout xilinx-v2016.3
     Host> git checkout -b mybranch-xilinx-v2016.3
     Host> make O=/opt/builds/uboot zynq_zybo_defconfig
+
+(replace `zynq_zybo_defconfig` by `zynq_zed_defconfig` or `zynq_zc706_defconfig` to reflect your own board).
 
 Then, build [U-Boot](http://www.denx.de/wiki/U-Boot):
 

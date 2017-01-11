@@ -61,7 +61,7 @@ if { $argc == 4 } {
 			"led[1]"        { "G2"   "LVCMOS15" }
 			"led[2]"        { "W21"  "LVCMOS25" }
 			"led[3]"        { "A17"  "LVCMOS15" }
-			"btn"           { "AK25" "LVCMOS25" }
+			"btn"           { "R27"  "LVCMOS25" }
 		}
 	} else {
 		usage

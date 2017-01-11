@@ -9,6 +9,7 @@
 */
 
 #include <stdio.h>
+#include <unistd.h>
 
 void main(void) {
   int i, s;

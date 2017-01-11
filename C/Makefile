@@ -8,21 +8,24 @@
 # http://www.cecill.info/licences/Licence_CeCILL_V1.1-US.txt
 #
 
-export SAB4Z		:= ..
-export CROSS_COMPILE	:= arm-buildroot-linux-uclibcgnueabi-
+define HELP_message
+make help: this message
+make foo: compile foo.c
+make ARCH=arm KDIR=<path-to-linux-build> module: build sab4z module
+endef
+export HELP_message
+
+help:
+	@echo "$$HELP_message"
+
+BUILD			:= /opt/builds
+export CROSS_COMPILE	:= arm-unknown-linux-gnueabihf-
 export ARCH		:= arm
-export KDIR		:= $(SAB4Z)/build/kernel
+export KDIR		:= $(BUILD)/kernel
 OBJS			:= $(wildcard *.o *.ko)
 CMDS			:= $(patsubst %,.%.cmd,$(OBJS))
 EXECS			:= hello_world sab4z test_sab4z_driver
 OTHERS			:= .tmp_versions modules.order Module.symvers sab4z_driver.mod.c
-
-define HELP_message
-make help: this message
-make foo: compile foo.c
-make ARCH=arm KDIR=<path-to-linux-build> sab4z_module: build sab4z module
-endef
-export HELP_message
 
 ifneq ($(KERNELRELEASE),)
 
@@ -30,9 +33,6 @@ ifneq ($(KERNELRELEASE),)
 obj-m  := sab4z_driver.o
 
 else
-
-help:
-	@echo "$$HELP_message"
 
 module:
 	$(MAKE) -C $(KDIR) M=$(PWD)

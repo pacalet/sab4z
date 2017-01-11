@@ -25,7 +25,7 @@ OUTPUT	:=
 endif
 
 rootdir		:= $(realpath .)
-BUILD		?= build
+BUILD		?= /opt/builds
 HDLDIR		:= hdl
 HDLSRCS		:= $(wildcard $(HDLDIR)/*.vhd)
 SCRIPTS		:= scripts
@@ -47,14 +47,14 @@ VVMODE		?= batch
 VIVADO		:= vivado
 VVBUILD		?= $(BUILD)/vv
 VVSCRIPT	:= $(SCRIPTS)/vvsyn.tcl
-# Supported boards: zybo or zc706
+# Supported boards: zybo, zed, zc706
 VVBOARD		?= zybo
 VIVADOFLAGS	:= -mode $(VVMODE) -notrace -source $(VVSCRIPT) -tempDir /tmp -journal $(VVBUILD)/vivado.jou -log $(VVBUILD)/vivado.log -tclargs $(rootdir) $(VVBUILD) $(VVBOARD) $(ILA)
 VVIMPL		:= $(VVBUILD)/top.runs/impl_1
 VVBIT		:= $(VVIMPL)/top_wrapper.bit
 
 # Software Design Kits
-XDTS			?= /opt/xlnx/device-tree-xlnx
+XDTS			?= /opt/downloads/device-tree-xlnx
 HSI			:= hsi
 SYSDEF			:= $(VVIMPL)/top_wrapper.sysdef
 DTSSCRIPT		:= $(SCRIPTS)/dts.tcl
@@ -84,11 +84,11 @@ make targets:
 
 directories:
   hdl sources          ./$(HDLDIR)
-  build                ./$(BUILD)
-  Modelsim build       ./$(MSBUILD)
-  Vivado build         ./$(VVBUILD)
-  Device Tree Sources  ./$(DTSBUILD)
-  FSBL sources         ./$(FSBLBUILD)
+  build                $(BUILD)
+  Modelsim build       $(MSBUILD)
+  Vivado build         $(VVBUILD)
+  Device Tree Sources  $(DTSBUILD)
+  FSBL sources         $(FSBLBUILD)
 
 customizable make variables:
   DEBUG       debug level: 0=none, 1: some, 2: verbose ($(DEBUG))
@@ -194,5 +194,3 @@ doc-clean:
 
 # Full clean
 clean: ms-clean vv-clean dts-clean fsbl-clean
-	@echo '[RM] $(BUILD)' && \
-	rm -rf $(BUILD)
