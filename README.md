@@ -273,7 +273,7 @@ The embedded system world sometimes looks overcomplicated to non-specialists. Bu
 
 You will need the Xilinx tools (Vivado and its companion SDK). The version that we used when designing this tutorial was `2016.3`. More recent versions should be OK but may require small modifications of the `scripts/vvsyn.tcl` synthesis script. In the following we assume that the Xilinx tools are properly installed.
 
-You will also need to download, configure and build several free and open source software. For each of them we will indicate the version that we used. More recent versions will probably be OK, at the price of minor changes there and there. In order to avoid difficulties with unstable versions of the tools, it is strongly advised to have a look at the tags, select a recent but stable one, create a local branch with the selected tag checked out and use it instead of the tip of the default branch. Example for `crosstool-NG`:
+You will also need to download, configure and build several free and open source software. For each of them we will indicate the version that we used. More recent versions will probably be OK, at the price of minor changes there and there. In order to avoid difficulties with unstable versions of the tools, it is strongly advised to have a look at the tags, select a recent but stable one, check it out and use it instead of the tip of the default branch. Example for `crosstool-NG`:
 
     Host> cd /some/where/crosstool-ng
     Host> git tag
@@ -281,7 +281,6 @@ You will also need to download, configure and build several free and open source
     crosstool-ng-1.22.0
     ...
     Host> git checkout crosstool-ng-1.22.0
-    Host> git checkout -b mybranch-1.22.0
 
 The clones of some git repositories and the directories in which we will build some components can be very large (several GB). Carefully select where to install them.
 
@@ -323,7 +322,6 @@ Let us first clone, compile and install crosstool-NG:
     crosstool-ng-1.22.0
     ...
     Host> git checkout crosstool-ng-1.22.0
-    Host> git checkout -b mybranch-1.22.0
     Host> ./bootstrap
     Host> ./configure --prefix=/opt/builds
     Host> make
@@ -409,10 +407,9 @@ Then, clone Buildroot and use it to create a default configuration in `/opt/buil
     Host> cd buildroot
     Host> git tag
     ...
-    2016.11.1
+    2017.02
     ...
-    Host> git checkout 2016.11.1
-    Host> git checkout -b mybranch-2016.11.1
+    Host> git checkout 2017.02
     Host> make BR2_EXTERNAL=/opt/builds/rootfs O=/opt/builds/rootfs zynq_zybo_defconfig
 
 (replace `zynq_zybo_defconfig` by `zynq_zed_defconfig` or `zynq_zc706_defconfig` to reflect your own board).
@@ -510,7 +507,6 @@ Let us first clone the Linux kernel and create a default configuration for our t
     xilinx-v2016.3
     ...
     Host> git checkout xilinx-v2016.3
-    Host> git checkout -b mybranch-xilinx-v2016.3
     Host> make O=/opt/builds/kernel ARCH=arm xilinx_zynq_defconfig
 
 Then, build the kernel:
@@ -598,7 +594,6 @@ Let us first clone U-Boot and create a default configuration for our board in `/
     xilinx-v2016.3
     ...
     Host> git checkout xilinx-v2016.3
-    Host> git checkout -b mybranch-xilinx-v2016.3
     Host> make O=/opt/builds/uboot zynq_zybo_defconfig
 
 (replace `zynq_zybo_defconfig` by `zynq_zed_defconfig` or `zynq_zc706_defconfig` to reflect your own board).
@@ -634,7 +629,6 @@ SAB4Z comes with a Makefile and a TCL script that automate the generation of dev
     xilinx-v2016.3
     ...
     Host> git checkout xilinx-v2016.3
-    Host> git checkout -b mybranch-xilinx-v2016.3
 
 Generate the default device tree sources for our hardware design for the board:
 
