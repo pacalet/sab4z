@@ -83,11 +83,6 @@ if [[ $? -ne 0 ]]; then
 fi
 toolchainpath=$(dirname $(realpath $toolchainpath))
 
-if [ -d $builds/$board ]; then
-	echo "*** Build directory $builds/$board already exists. Exiting..." >&2
-	exit 0
-fi
-
 echo "sab4z         = $sab4z"
 echo "packages      = $packages"
 echo "downloads     = $downloads"
@@ -102,45 +97,72 @@ linux=$packages/linux-xlnx
 uboot=$packages/u-boot-xlnx
 dts=$packages/device-tree-xlnx
 
-# Bistream
+# Sdcard archive
+s=$builds/$board/sdcard
+mkdir -p $s
+
+# Bitstream
 v=$builds/$board/vv
-echo "Generating bitstream ($builds/$board/vv/top.runs/impl_1/top_wrapper.bit)..."
-mkdir -p $v
-make -C $sab4z VVBUILD=$v VVBOARD=$board vv-all
+if [ -d $v ]; then
+	echo "*** $v already exists. Skipping..." >&2
+else
+	echo "Generating bitstream ($builds/$board/vv/top.runs/impl_1/top_wrapper.bit)..."
+	mkdir -p $v
+	make -C $sab4z VVBUILD=$v VVBOARD=$board vv-all
+fi
 
 # Device tree
 d=$builds/$board/dts
-echo "Generating device tree sources ($d/)..."
-make -C $sab4z VVBUILD=$v XDTS=$dts DTSBUILD=$d dts
-echo "Compiling device tree blob ($builds/$board/sdcard/devicetree.dtb)..."
-mkdir -p $builds/$board/sdcard
-dtc -I dts -O dtb -o $builds/$board/sdcard/devicetree.dtb $d/system.dts
+if [ -d $d ]; then
+	echo "*** $d already exists. Skipping..." >&2
+else
+	echo "Generating device tree sources ($d/)..."
+	make -C $sab4z VVBUILD=$v XDTS=$dts DTSBUILD=$d dts
+	echo "Compiling device tree blob ($s/devicetree.dtb)..."
+	dtc -I dts -O dtb -o $s/devicetree.dtb $d/system.dts
+fi
 
 # FSBL
 f=$builds/$board/fsbl
-echo "Generating FSBL sources ($f/)..."
-mkdir -p $f
-make -C $sab4z VVBUILD=$v FSBLBUILD=$f fsbl
-echo "Compiling FSBL ($f/executable.elf)..."
-make -C $f
+if [ -d $f ]; then
+	echo "*** $f already exists. Skipping..." >&2
+else
+	echo "Generating FSBL sources ($f/)..."
+	mkdir -p $f
+	make -C $sab4z VVBUILD=$v FSBLBUILD=$f fsbl
+	echo "Compiling FSBL ($f/executable.elf)..."
+	make -C $f
+fi
 
 # Root filesystem
-b=$builds/$board/rootfs
-echo "Building root filesystem ($b/images/rootfs.cpio.uboot)..."
-mkdir -p $b
-touch $b/external.mk $b/Config.in
-echo 'name: sab4z' > $b/external.desc
-echo 'desc: sab4z system with buildroot' >> $b/external.desc
-mkdir -p $b/configs $b/overlays
-cp $sab4z/scripts/buildroot_defconfig $b/configs
-echo "BR2_DL_DIR=\"$downloads/buildroot-src\"" >> $b/configs/buildroot_defconfig
-echo "BR2_TOOLCHAIN_EXTERNAL_PATH=\"$toolchainpath\"" >> $b/configs/buildroot_defconfig
-echo "BR2_TOOLCHAIN_EXTERNAL_CUSTOM_PREFIX=\"$toolchain\"" >> $b/configs/buildroot_defconfig
-echo "BR2_CCACHE_DIR=\"$builds/buildroot-ccache\"" >> $b/configs/buildroot_defconfig
-echo "CONFIG_RX=y" > $b/configs/busybox_defconfig
+b=$builds/rootfs
 path=$PATH
 export PATH=/usr/bin:/bin:$toolchainpath
-make -C $buildroot BR2_EXTERNAL=$b O=$b buildroot_defconfig
+if [ -d $b ]; then
+	echo "*** $b already exists. Skipping configuration..." >&2
+else
+	echo "Configuring root filesystem ($b)..."
+	mkdir -p $b
+	touch $b/external.mk $b/Config.in
+	echo 'name: sab4z' > $b/external.desc
+	echo 'desc: sab4z system with buildroot' >> $b/external.desc
+	mkdir -p $b/configs $b/overlays/etc/profile.d $b/overlays/root/.ssh $b/overlays/etc/dropbear
+	echo "export PS1='Sab4z> '" > $b/overlays/etc/profile.d/prompt.sh
+	cp $sab4z/scripts/sab4z_rsa.pub $b/overlays/root/.ssh/authorized_keys
+	cp $sab4z/scripts/dropbear_ecdsa_host_key $b/overlays/etc/dropbear
+	cp $sab4z/scripts/buildroot_defconfig $b/configs
+	echo "BR2_DL_DIR=\"$downloads/buildroot-src\"" >> $b/configs/buildroot_defconfig
+	echo "BR2_TOOLCHAIN_EXTERNAL_PATH=\"$toolchainpath\"" >> $b/configs/buildroot_defconfig
+	echo "BR2_TOOLCHAIN_EXTERNAL_CUSTOM_PREFIX=\"$toolchain\"" >> $b/configs/buildroot_defconfig
+	echo "BR2_CCACHE_DIR=\"$builds/buildroot-ccache\"" >> $b/configs/buildroot_defconfig
+	echo "CONFIG_RX=y" > $b/configs/busybox_defconfig
+	make -C $buildroot BR2_EXTERNAL=$b O=$b buildroot_defconfig
+fi
+echo "Building software applications ($sab4z/C/)..."
+make -C $sab4z/C CFLAGS=-g clean hello_world sab4z
+echo "Copying software application in root filesystem ($b/overlays/root/)..."
+cp $sab4z/C/hello_world $sab4z/C/sab4z $b/overlays/root
+echo "Building root filesystem ($b/images/rootfs.cpio.uboot)..."
 make -C $b
 export PATH=$path
 
@@ -148,14 +170,19 @@ export PATH=$PATH:$b/host/usr/bin
 export CROSS_COMPILE=${toolchain}-
 
 # Linux kernel and modules
-k=$builds/$board/kernel
+k=$builds/kernel
+if [ -d $k ]; then
+	echo "*** $k already exists. Skipping configuration..." >&2
+else
+	echo "Configuring Linux kernel ($k)..."
+	mkdir -p $k
+	make -C $linux O=$k ARCH=arm xilinx_zynq_defconfig
+fi
 echo "Building Linux kernel ($k/arch/arm/boot/uImage)..."
-mkdir -p $k
-make -C $linux O=$k ARCH=arm xilinx_zynq_defconfig
 make -C $k -j24 ARCH=arm
 make -C $k ARCH=arm LOADADDR=0x8000 uImage
-echo "Copying Linux kernel ($builds/$board/sdcard/uImage)..."
-cp $k/arch/arm/boot/uImage $builds/$board/sdcard
+echo "Copying Linux kernel ($s/uImage)..."
+cp $k/arch/arm/boot/uImage $s
 echo "Building and installing Linux kernel modules ($b/overlays)..."
 make -C $k -j24 ARCH=arm modules
 make -C $k ARCH=arm modules_install INSTALL_MOD_PATH=$b/overlays
@@ -163,14 +190,19 @@ path=$PATH
 export PATH=/usr/bin:/bin:$toolchainpath
 make -C $b
 export PATH=$path
-echo "Copying root filesystem ($builds/$board/sdcard/uramdisk.image.gz)..."
-cp $builds/$board/rootfs/images/rootfs.cpio.uboot $builds/$board/sdcard/uramdisk.image.gz
+echo "Copying root filesystem ($s/uramdisk.image.gz)..."
+cp $b/images/rootfs.cpio.uboot $s/uramdisk.image.gz
 
 # U-Boot
 u=$builds/$board/uboot
+if [ -d $u ]; then
+	echo "*** $u already exists. Skipping configuration..." >&2
+else
+	echo "Configuring U-Boot ($u)..."
+	mkdir -p $u
+	make -C $uboot O=$u zynq_${board}_defconfig
+fi
 echo "Building U-Boot ($u/u-boot.elf)..."
-mkdir -p $u
-make -C $uboot O=$u zynq_${board}_defconfig
 make -C $u -j24
 cp $u/u-boot $u/u-boot.elf
 

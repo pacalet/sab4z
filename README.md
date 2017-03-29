@@ -72,7 +72,9 @@ Throughout this documentation we will use different prompts for the different co
 
     .
     ├── archives                  Archives
-    │   └── sdcard.tgz            Archive to unpack on SD card
+    │   ├── zed/sdcard.tgz        Archive to unpack on SD card for the ZedBoard
+    │   ├── zybo/sdcard.tgz       Archive to unpack on SD card for the Zybo
+    │   └── zc706/sdcard.tgz      Archive to unpack on SD card for the ZC706
     ├── C                         C source code
     │   ├── hello_world.c         Simple example user application
     │   ├── libsab4z.c            User-space part of Linux driver
@@ -286,7 +288,7 @@ The clones of some git repositories and the directories in which we will build s
 
 Some steps can be run in parallel because they do not depend on the results of other steps. Some steps cannot be started before others finish and this will be signalled.
 
-The instructions introduce new concepts one after the other, with the advantage that for any given goal the number of actions to perform is limited and each action is easier to understand. The drawback is that, each time we introduce a new concept, we will have to reconfigure, rebuild and reinstall one or several components. In certain circumstances (like, for instance, when reconfiguring the Buildroot tool chain) such a move will take several minutes or even worse. Just the once will not hurt, the impatient should thus read the complete document before she starts following the instructions.
+The instructions introduce new concepts one after the other, with the advantage that for any given goal the number of actions to perform is limited and each action is easier to understand. The drawback is that, each time we introduce a new concept, we will have to reconfigure, rebuild and reinstall one or several components. In certain circumstances such a move will take several minutes or even worse. Just the once will not hurt, the impatient should thus read the complete document before she starts following the instructions.
 
 In the following we download all components in subdirectories of `/opt/downloads` and build in subdirectories of `/opt/builds`. Adapt to your own situation.
 
@@ -665,6 +667,7 @@ Finally, prepare a SD card with a FAT32 first primary partition (8MB minimum), m
 
     Host> SDCARD=<path-to-mounted-sd-card>
     Host> cd /opt/builds
+    Host> cp boot.bin $SDCARD
     Host> cp kernel/arch/arm/boot/uImage $SDCARD
     Host> cp rootfs/images/rootfs.cpio.uboot $SDCARD/uramdisk.image.gz
     Host> cp boot.bin devicetree.dtb $SDCARD
@@ -1073,6 +1076,8 @@ Accessing the SAB4Z hardware device using the `devmem` utility or a user applica
 It handles only the `STATUS` and `R` registers. The driver is split in two parts:
 
 * The kernel space part (`sab4z_driver.h` and `sab4z_driver.c`) provides data structures and low-level functions to communicate with the SAB4Z hardware. A first set of low-level functions (`sab4z_open`, `sab4z_close`, `sab4z_read`, `sab4z_write`) implement the `open`, `close`, `read` and `write` Linux system calls, respectively, for the `/dev/sab4z` device file.
+
+To be continued...
 
 ## <a name="FurtherRunAcrossSab4z"></a>Run the complete software stack across SAB4Z
 
