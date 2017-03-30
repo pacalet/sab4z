@@ -299,6 +299,8 @@ Clone the SAB4Z git repository:
     Host> mkdir -p /opt/downloads /opt/builds
     Host> cd /opt/downloads
     Host> git clone https://gitlab.telecom-paristech.fr/renaud.pacalet/sab4z.git
+    or:
+    Host> git clone https://github.com/pacalet/sab4z.git
 
 The hardware synthesis produces a bitstream file from the VHDL source code in `hdl/`. It is done by the Xilinx Vivado tools. SAB4Z comes with a `Makefile` (that defines a `help` goal) and a `scripts/vvsyn.tcl` synthesis script to automate the synthesis:
 
