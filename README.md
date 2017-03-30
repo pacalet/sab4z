@@ -184,7 +184,7 @@ The following table summarizes the IO mapping for the currently supported boards
 Download the archive that corresponds to your board (replace `BOARD` by `zybo`, `zed` or `zc706` in the `wget` URL), insert a SD card in your card reader and unpack the archive to it:
 
     Host> cd /tmp
-    Host> wget https://raw.githubusercontent.com/pacalet/sab4z/master/archives/BOARD/sdcard.tgz
+    Host> wget https://perso.telecom-paristech.fr/~pacalet/archives/BOARD/sdcard.tgz
     Host> SDCARD=<path-to-mounted-sd-card>
     Host> tar -C $SDCARD -xf sdcard.tgz
     Host> sync
@@ -298,7 +298,7 @@ Clone the SAB4Z git repository:
 
     Host> mkdir -p /opt/downloads /opt/builds
     Host> cd /opt/downloads
-    Host> git clone https://github.com/pacalet/sab4z.git
+    Host> git clone https://gitlab.telecom-paristech.fr/renaud.pacalet/sab4z.git
 
 The hardware synthesis produces a bitstream file from the VHDL source code in `hdl/`. It is done by the Xilinx Vivado tools. SAB4Z comes with a `Makefile` (that defines a `help` goal) and a `scripts/vvsyn.tcl` synthesis script to automate the synthesis:
 
@@ -1273,11 +1273,11 @@ To investigate more and fix this on the long term, you can fetch the server's ce
 
     Host> openssl s_client -CApath <path-to-local-certificates> -showcerts -connect <server>:<port>
 
-Example on a Debian host (the certificates you trust are in `/etc/ssl/certs`), for the SAB4Z gitlab server (`gitlab.eurecom.fr`) using https (port `443`):
+Example on a Debian host (the certificates you trust are in `/etc/ssl/certs`), for the SAB4Z gitlab server (`gitlab.telecom-paristech.fr`) using https (port `443`):
 
-    Host> openssl s_client -CApath /etc/ssl/certs -showcerts -connect gitlab.eurecom.fr:443
+    Host> openssl s_client -CApath /etc/ssl/certs -showcerts -connect gitlab.telecom-paristech.fr:443
     CONNECTED(00000003)
-    depth=2 C = US, O = DigiCert Inc, OU = www.digicert.com, CN = DigiCert High Assurance EV Root CA
+    depth=3 C = SE, O = AddTrust AB, OU = AddTrust External TTP Network, CN = AddTrust External CA Root
     ...
 
 There are several solutions to this problem, from best to worse:
@@ -1285,23 +1285,23 @@ There are several solutions to this problem, from best to worse:
 1. If you have an account on the git server, add your ssh public key to your account and clone using ssh instead of https. Example with the SAB4Z git repository:
 
     ````
-    Host> git clone git@gitlab.eurecom.fr:renaud.pacalet/sab4z.git
+    Host> git clone git@gitlab.telecom-paristech.fr:renaud.pacalet/sab4z.git
     ````
 
-1. If you are definitely confident that you are talking to the right server and if you definitely trust it, you can download the server's certificate, store it somewhere and instruct git to accept it. Example for the SAB4Z gitlab server (`gitlab.eurecom.fr`), using https (port `443`), for user `mary` (home directory `/home/mary`):
+1. If you are definitely confident that you are talking to the right server and if you definitely trust it, you can download the server's certificate, store it somewhere and instruct git to accept it. Example for the SAB4Z gitlab server (`gitlab.telecom-paristech.fr`), using https (port `443`), for user `mary` (home directory `/home/mary`):
 
     ````
     Host> mkdir ~/certs
-    Host> openssl s_client -connect gitlab.eurecom.fr:443 2> /dev/null < /dev/null | \
+    Host> openssl s_client -connect gitlab.telecom-paristech.fr:443 2> /dev/null < /dev/null | \
     awk '/^-*BEGIN CERTIFICATE-*/,/^-*END CERTIFICATE-*/ {print}' > \
-    ~/certs/eurecom.pem
-    Host> git config --global http.sslCAInfo /home/mary/certs/eurecom.pem
+    ~/certs/telecom-paristech.pem
+    Host> git config --global http.sslCAInfo /home/mary/certs/telecom-paristech.pem
     ````
 
 1. You can also add the git server's certificate to the list of trusted certificates of your host. Example with the SAB4Z git server:
 
     ````
-    Host# openssl s_client -connect gitlab.eurecom.fr:443 2> /dev/null < /dev/null | \
+    Host# openssl s_client -connect gitlab.telecom-paristech.fr:443 2> /dev/null < /dev/null | \
     awk '/^-*BEGIN CERTIFICATE-*/,/^-*END CERTIFICATE-*/ {print}' >> \
     /etc/ssl/certs/ca-certificates.crt
     ````
