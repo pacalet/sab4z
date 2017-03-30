@@ -70,40 +70,43 @@ Throughout this documentation we will use different prompts for the different co
 
 # <a name="Content"></a>Content
 
-    .
-    ├── archives                  Archives
-    │   ├── zed/sdcard.tgz        Archive to unpack on SD card for the ZedBoard
-    │   ├── zybo/sdcard.tgz       Archive to unpack on SD card for the Zybo
-    │   └── zc706/sdcard.tgz      Archive to unpack on SD card for the ZC706
-    ├── C                         C source code
-    │   ├── hello_world.c         Simple example user application
-    │   ├── libsab4z.c            User-space part of Linux driver
-    │   ├── libsab4z.h            User-space part of Linux driver (header)
-    │   ├── Makefile              Makefile for software
-    │   ├── sab4z.c               User application using SAB4Z
-    │   ├── sab4z_driver.c        Kernel-space part of Linux driver
-    │   ├── sab4z_driver.h        Kernel-space part of Linux driver (header)
-    │   └── test_sab4z_driver.c   Linux driver test application
-    ├── COPYING                   License (English version)
-    ├── COPYING-FR                Licence (version française)
-    ├── COPYRIGHT                 Copyright notice
-    ├── hdl                       VHDL source code
-    │   ├── axi_pkg.vhd           Package of AXI definitions
-    │   ├── debouncer.vhd         Debouncer-resynchronizer
-    │   └── sab4z.vhd             Top-level SAB4Z
-    ├── images                    Figures
-    │   ├── sab4z.fig             SAB4Z in Zynq
-    │   ├── sab4z.png             PNG export of sab4z.fig
-    │   └── zybo.png              Zybo board picture
-    ├── Makefile                  Main makefile
-    ├── README.md                 This file
-    └── scripts                   Scripts
-        ├── boot.bif              Zynq Boot Image description File
-        ├── dts.tcl               TCL script for device tree generation
-        ├── fsbl.tcl              TCL script for FSBL generation
-        ├── ila.tcl               TCL script for ILA debug cores
-        ├── uEnv.txt              Definitions of U-Boot environment variables
-        └── vvsyn.tcl             Vivado TCL synthesis script
+
+    ├── C                             C source code
+    │   ├── hello_world.c             Simple example user application
+    │   ├── libsab4z.c                User-space part of Linux driver
+    │   ├── libsab4z.h                User-space part of Linux driver (header)
+    │   ├── Makefile                  Makefile for software
+    │   ├── sab4z.c                   User application using SAB4Z
+    │   ├── sab4z_driver.c            Kernel-space part of Linux driver
+    │   ├── sab4z_driver.h            Kernel-space part of Linux driver (header)
+    │   └── test_sab4z_driver.c       Linux driver test application
+    ├── COPYING                       License (English version)
+    ├── COPYING-FR                    Licence (version française)
+    ├── COPYRIGHT                     Copyright notice
+    ├── hdl                           VHDL source code
+    │   ├── axi_pkg.vhd               Package of AXI definitions
+    │   ├── debouncer.vhd             Debouncer-resynchronizer
+    │   └── sab4z.vhd                 Top-level SAB4Z
+    ├── images                        Figures
+    │   ├── sab4z.fig                 SAB4Z in Zynq
+    │   ├── sab4z.png                 PNG export of sab4z.fig
+    │   ├── zybo1.fig                     Commented Zybo board picture
+    │   ├── zybo1.png                 PNG export ofzybo1.fig
+    │   └── zybo.png                  Zybo board picture
+    ├── Makefile                      Main makefile
+    ├── README.md                     This file
+    └── scripts                       Scripts
+        ├── boot.bif                  Zynq Boot Image description File
+        ├── buildroot_defconfig       Buildroot configuration
+        ├── build.sh                  Build script
+        ├── dropbear_ecdsa_host_key   ECDSA host key for Zynq board
+        ├── dts.tcl                   TCL script for device tree generation
+        ├── fsbl.tcl                  TCL script for FSBL generation
+        ├── ila.tcl                   TCL script for ILA debug cores
+        ├── sab4z_rsa                 RSA private key for ssh communication with Zynq board
+        ├── sab4z_rsa.pub             RSA public key for ssh communication with Zynq board
+        ├── uEnv.txt                  Definitions of U-Boot environment variables
+        └── vvsyn.tcl                 Vivado TCL synthesis script
 
 # <a name="Description"></a>Description
 
