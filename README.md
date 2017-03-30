@@ -90,7 +90,7 @@ Throughout this documentation we will use different prompts for the different co
     ├── images                        Figures
     │   ├── sab4z.fig                 SAB4Z in Zynq
     │   ├── sab4z.png                 PNG export of sab4z.fig
-    │   ├── zybo1.fig                     Commented Zybo board picture
+    │   ├── zybo1.fig                 Commented Zybo board picture
     │   ├── zybo1.png                 PNG export ofzybo1.fig
     │   └── zybo.png                  Zybo board picture
     ├── Makefile                      Main makefile
@@ -198,10 +198,20 @@ Eject the SD card.
 ## <a name="Run"></a>Testing SAB4Z on the board
 
 * Plug the SD card in your board and connect the USB cable.
-* Check the position of the jumper that selects the boot medium (SD card).
-* Power on. New character devices should show up on the host PC. One corresponds to the serial link with the board, e.g. `/dev/ttyUSB1`. If you do not know which character device to use, check the documentation of your board.
-* Launch a terminal emulator (picocom, minicom...) and attach it to the new character device, with a 115200 baudrate, no flow control, no parity, 8 bits characters, no port reset and no port locking: `picocom -b115200 -fn -pn -d8 -r -l /dev/ttyUSB1`.
-* Wait until Linux boots, log in as root (there is no password) and start interacting with SAB4Z.
+* Check the position of the blue jumper that selects the boot medium (SD card).
+* On the Zybo, also check the blue jumper that selects the power source (USB).
+* Power on. New character devices should show up on the host PC in `/dev`. One corresponds to the serial link with the board (e.g. `/dev/ttyUSB1` for the Zybo or `/dev/ttyACM0` for the ZedBoard).
+* Launch a terminal emulator (picocom, minicom...) and attach it to the new character device, with a 115200 baudrate, no flow control, no parity, 8 bits characters, no port reset and no port locking. Example with picocom, if the character device is `/dev/ttyUSB1`:
+```
+picocom -b115200 -fn -pn -d8 -r -l /dev/ttyUSB1
+```
+Note: it sometimes take times before the character device shows up and you can use it. If you get error messages like:
+```
+FATAL: cannot open /dev/ttyUSB1: Device or resource busy
+```
+keep trying, it should finally work.
+* Wait until Linux boots. If it does, you should see the `sab4z login:` prompt. If it does not you should see the U-Boot prompt: `Zynq>`; just type `boot` and Linux should boot.
+* Log in as root (there is no password) and start interacting with SAB4Z.
 
 <!-- -->
     Host> picocom -b115200 -fn -pn -d8 -r -l /dev/ttyUSB1
@@ -687,7 +697,25 @@ Eject the SD card, plug it in the board and power on.
 
 The serial interface that we use to interact with the board is limited both in terms of bandwidth and functionality. Transferring files between the host and the board, for instance, even if not impossible through the serial interface, is overcomplicated and unreliable. This section will show you how to set up a much more powerful and convenient network interface between host and board. In order to do this we will connect the board to a wired network using an Ethernet cable. Note that if you do not have a wired network or if, for security reasons, you cannot use your existing wired network, it is possible to create a point-to-point Ethernet network between your host and the board.
 
-From now on we consider that the host and the board can be connected on the same wired network. We also consider that the host knows the board under the `sab4z` hostname. The next step is to add `dropbear`, a tiny `ssh` server, to our root file system and enable the networking. This will allow us to connect to the board from the host using a `ssh` client.
+From now on we consider that the host and the board can be connected on the same wired network. We also consider that the host knows the board under the `sab4z` hostname.
+
+### If you are using one of the provided SD card archives
+
+The provided SD card archives are already configured to support a network interface. If you are using one of them, simply use the provided `scripts/sab4z_rsa` RSA private key (no passphrase) to connect to the board and, when asked to, accept the persitent ECDSA key:
+```
+Host> eval ($ssh-agent) # If you do not already have an ssh agent running
+Host> ssh-add /opt/downloads/sab4z/scripts/sab4z_rsa
+Host> ssh root@sab4z
+The authenticity of host 'sab4z (<no hostip for proxy command>)' can't be established.
+ECDSA key fingerprint is d3:c5:2e:05:5d:be:89:42:65:d5:62:45:39:18:41:24.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added 'sab4z' (ECDSA) to the list of known hosts.
+Sab4z>
+```
+
+### If you are building everything from scratch
+
+The first step is to add `dropbear`, a tiny `ssh` server, to our root file system and enable the networking. This will allow us to connect to the board from the host using a `ssh` client.
 
     Host> cd /opt/builds/rootfs
     Host> make menuconfig
@@ -697,11 +725,11 @@ In the Buildroot configuration menus change the following options
     System configuration -> Network interface to configure through DHCP -> eth0
     Target packages -> Networking applications -> dropbear -> yes
 
-By default, for security reasons, the board will reject `ssh` connections for user `root`. Let us copy our host `ssh` public key to the board such that we can connect as `root` on the board, from the host, without password. If you do not have a `ssh` key already, generate one first with `ssh-keygen`. Assuming our public key on the host is `~/.ssh/id_rsa.pub`, add it to the Buildroot overlays and rebuild the root file system:
+By default, for security reasons, the board will reject `ssh` connections for user `root`. Let us copy our host `ssh` public key to the board such that we can connect as `root` on the board, from the host, without password. If you do not have a `ssh` key already, generate one first with `ssh-keygen`. Assuming our public / private keys on the host are `~/.ssh/sab4z_rsa.pub` and `~/.ssh/sab4z_rsa` respectively, add the public key to the Buildroot overlays and rebuild the root file system:
 
     Host> cd /opt/builds/rootfs
     Host> mkdir -p overlays/root/.ssh
-    Host> cat ~/.ssh/id_rsa.pub >> overlays/root/.ssh/authorized_keys
+    Host> cat ~/.ssh/sab4z_rsa.pub >> overlays/root/.ssh/authorized_keys
     Host> make
 
 Mount the SD card on your host PC, copy the new root file system image on it, unmount and eject the SD card, plug it in the board, power on and try to connect from the host:
@@ -711,6 +739,8 @@ Mount the SD card on your host PC, copy the new root file system image on it, un
     Host> cp images/rootfs.cpio.uboot $SDCARD/uramdisk.image.gz
     Host> sync
     Host> umount $SDCARD
+    Host> eval ($ssh-agent) # If you do not already have an ssh agent running
+    Host> ssh-add ~/.ssh/sab4z_rsa
     Host> ssh root@sab4z
     The authenticity of host 'sab4z (<no hostip for proxy command>)' can't be established.
     ECDSA key fingerprint is d3:c5:2e:05:5d:be:89:42:65:d5:62:45:39:18:41:24.
@@ -868,7 +898,15 @@ Unmount and eject the SD card, plug it in the board, power on and connect as roo
 
 ### <a name="FurtherFileTransferRx"></a>File transfer on the serial link
 
-The drawback of the two previous solutions is the SD card manipulations. There is a way to transfer files from the host PC to the board using the serial interface. On the board side we will use the Busybox `rx` utility. As it is not enabled by default, we will first reconfigure and rebuild our root file system:
+The drawback of the two previous solutions is the SD card manipulations. There is a way to transfer files from the host PC to the board using the serial interface. On the board side we will use the Busybox `rx` utility.
+
+#### If you are using one of the provided SD card archives
+
+The provided SD card archives are already configured to support a file transfers on the serial link. You can skip the root file system reconfiguration.
+
+#### If you are building everything from scratch
+
+As the `rx` Busybox utility is not enabled by default, we will first reconfigure and rebuild our root file system:
 
     Host> cd /opt/builds/rootf
     Host> make busybox-menuconfig
@@ -885,6 +923,8 @@ Quit (save when asked), rebuild, mount the SD card on the host, copy the new roo
     Host> SDCARD=<path-to-mounted-sd-card>
     Host> cp /opt/builds/rootfs/images/rootfs.cpio.uboot $SDCARD/uramdisk.image.gz
     Host> umount $SDCARD
+
+#### Use `sx` and `rx` to transfer files on the serial link
 
 On the host side we will use the `sx` utility. If it is not already, install it first - it is provided by the `lrzsz` Debian package. Launch `picocom`, with the `--send-cmd "sx" --receive-cmd "rx"` options, launch `rx <destination-file>` on the board, press `C-a C-s` (control-a control-s) to instruct `picocom` to send a file from the host PC to the board and provide the name of the file to send:
 
