@@ -8,21 +8,21 @@
 -- http://www.cecill.info/licences/Licence_CeCILL_V1.1-US.txt
 --
 
--- See the README.md file for a detailed description of SAB4Z
+-- See the README.md file for a detailed description of SAB4U
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.axi_pkg.all;
+use work.axi64_pkg.all;
 
-entity sab4z is
+entity sab4u is
   port(
     aclk:       in std_logic;  -- Clock
     aresetn:    in std_logic;  -- Synchronous, active low, reset
     btn:        in std_logic;  -- Command button
-    sw:         in  std_logic_vector(3 downto 0); -- Slide switches
-    led:        out std_logic_vector(3 downto 0); -- LEDs
+    sw:         in  std_logic_vector(7 downto 0); -- Slide switches
+    led:        out std_logic_vector(7 downto 0); -- LEDs
 
     --------------------------------
     -- AXI lite slave port s0_axi --
@@ -30,18 +30,18 @@ entity sab4z is
     -- Inputs (master to slave) --
     ------------------------------
     -- Read address channel
-    s0_axi_araddr:  in  std_logic_vector(29 downto 0);
+    s0_axi_araddr:  in  std_logic_vector(39 downto 0);
     s0_axi_arprot:  in  std_logic_vector(2 downto 0);
     s0_axi_arvalid: in  std_logic;
     -- Read data channel
     s0_axi_rready:  in  std_logic;
     -- Write address channel
-    s0_axi_awaddr:  in  std_logic_vector(29 downto 0);
+    s0_axi_awaddr:  in  std_logic_vector(39 downto 0);
     s0_axi_awprot:  in  std_logic_vector(2 downto 0);
     s0_axi_awvalid: in  std_logic;
     -- Write data channel
-    s0_axi_wdata:   in  std_logic_vector(31 downto 0);
-    s0_axi_wstrb:   in  std_logic_vector(3 downto 0);
+    s0_axi_wdata:   in  std_logic_vector(63 downto 0);
+    s0_axi_wstrb:   in  std_logic_vector(7 downto 0);
     s0_axi_wvalid:  in  std_logic;
     -- Write response channel
     s0_axi_bready:  in  std_logic;
@@ -51,7 +51,7 @@ entity sab4z is
     -- Read address channel
     s0_axi_arready: out std_logic;
     -- Read data channel
-    s0_axi_rdata:   out std_logic_vector(31 downto 0);
+    s0_axi_rdata:   out std_logic_vector(63 downto 0);
     s0_axi_rresp:   out std_logic_vector(1 downto 0);
     s0_axi_rvalid:  out std_logic;
     -- Write address channel
@@ -69,11 +69,11 @@ entity sab4z is
     ------------------------------
     -- Read address channel
     s1_axi_arid:    in  std_logic_vector(5 downto 0);
-    s1_axi_araddr:  in  std_logic_vector(29 downto 0);
-    s1_axi_arlen:   in  std_logic_vector(3 downto 0);
+    s1_axi_araddr:  in  std_logic_vector(39 downto 0);
+    s1_axi_arlen:   in  std_logic_vector(7 downto 0);
     s1_axi_arsize:  in  std_logic_vector(2 downto 0);
     s1_axi_arburst: in  std_logic_vector(1 downto 0);
-    s1_axi_arlock:  in  std_logic_vector(1 downto 0);
+    s1_axi_arlock:  in  std_logic;
     s1_axi_arcache: in  std_logic_vector(3 downto 0);
     s1_axi_arprot:  in  std_logic_vector(2 downto 0);
     s1_axi_arqos:   in  std_logic_vector(3 downto 0);
@@ -82,19 +82,19 @@ entity sab4z is
     s1_axi_rready:  in  std_logic;
     -- Write address channel
     s1_axi_awid:    in  std_logic_vector(5 downto 0);
-    s1_axi_awaddr:  in  std_logic_vector(29 downto 0);
-    s1_axi_awlen:   in  std_logic_vector(3 downto 0);
+    s1_axi_awaddr:  in  std_logic_vector(39 downto 0);
+    s1_axi_awlen:   in  std_logic_vector(7 downto 0);
     s1_axi_awsize:  in  std_logic_vector(2 downto 0);
     s1_axi_awburst: in  std_logic_vector(1 downto 0);
-    s1_axi_awlock:  in  std_logic_vector(1 downto 0);
+    s1_axi_awlock:  in  std_logic;
     s1_axi_awcache: in  std_logic_vector(3 downto 0);
     s1_axi_awprot:  in  std_logic_vector(2 downto 0);
     s1_axi_awqos:   in  std_logic_vector(3 downto 0);
     s1_axi_awvalid: in  std_logic;
     -- Write data channel
     s1_axi_wid:     in  std_logic_vector(5 downto 0);
-    s1_axi_wdata:   in  std_logic_vector(31 downto 0);
-    s1_axi_wstrb:   in  std_logic_vector(3 downto 0);
+    s1_axi_wdata:   in  std_logic_vector(63 downto 0);
+    s1_axi_wstrb:   in  std_logic_vector(7 downto 0);
     s1_axi_wlast:   in  std_logic;
     s1_axi_wvalid:  in  std_logic;
     -- Write response channel
@@ -106,7 +106,7 @@ entity sab4z is
     s1_axi_arready: out std_logic;
     -- Read data channel
     s1_axi_rid:     out std_logic_vector(5 downto 0);
-    s1_axi_rdata:   out std_logic_vector(31 downto 0);
+    s1_axi_rdata:   out std_logic_vector(63 downto 0);
     s1_axi_rresp:   out std_logic_vector(1 downto 0);
     s1_axi_rlast:   out std_logic;
     s1_axi_rvalid:  out std_logic;
@@ -127,11 +127,11 @@ entity sab4z is
     -------------------------------
     -- Read address channel
     m_axi_arid:    out std_logic_vector(5 downto 0);
-    m_axi_araddr:  out std_logic_vector(31 downto 0);
-    m_axi_arlen:   out std_logic_vector(3 downto 0);
+    m_axi_araddr:  out std_logic_vector(39 downto 0);
+    m_axi_arlen:   out std_logic_vector(7 downto 0);
     m_axi_arsize:  out std_logic_vector(2 downto 0);
     m_axi_arburst: out std_logic_vector(1 downto 0);
-    m_axi_arlock:  out std_logic_vector(1 downto 0);
+    m_axi_arlock:  out std_logic;
     m_axi_arcache: out std_logic_vector(3 downto 0);
     m_axi_arprot:  out std_logic_vector(2 downto 0);
     m_axi_arqos:   out std_logic_vector(3 downto 0);
@@ -140,19 +140,19 @@ entity sab4z is
     m_axi_rready:  out std_logic;
     -- Write address channel
     m_axi_awid:    out std_logic_vector(5 downto 0);
-    m_axi_awaddr:  out std_logic_vector(31 downto 0);
-    m_axi_awlen:   out std_logic_vector(3 downto 0);
+    m_axi_awaddr:  out std_logic_vector(39 downto 0);
+    m_axi_awlen:   out std_logic_vector(7 downto 0);
     m_axi_awsize:  out std_logic_vector(2 downto 0);
     m_axi_awburst: out std_logic_vector(1 downto 0);
-    m_axi_awlock:  out std_logic_vector(1 downto 0);
+    m_axi_awlock:  out std_logic;
     m_axi_awcache: out std_logic_vector(3 downto 0);
     m_axi_awprot:  out std_logic_vector(2 downto 0);
     m_axi_awqos:   out std_logic_vector(3 downto 0);
     m_axi_awvalid: out std_logic;
     -- Write data channel
     m_axi_wid:     out std_logic_vector(5 downto 0);
-    m_axi_wdata:   out std_logic_vector(31 downto 0);
-    m_axi_wstrb:   out std_logic_vector(3 downto 0);
+    m_axi_wdata:   out std_logic_vector(63 downto 0);
+    m_axi_wstrb:   out std_logic_vector(7 downto 0);
     m_axi_wlast:   out std_logic;
     m_axi_wvalid:  out std_logic;
     -- Write response channel
@@ -164,7 +164,7 @@ entity sab4z is
     m_axi_arready: in  std_logic;
     -- Read data channel
     m_axi_rid:     in  std_logic_vector(5 downto 0);
-    m_axi_rdata:   in  std_logic_vector(31 downto 0);
+    m_axi_rdata:   in  std_logic_vector(63 downto 0);
     m_axi_rresp:   in  std_logic_vector(1 downto 0);
     m_axi_rlast:   in  std_logic;
     m_axi_rvalid:  in  std_logic;
@@ -177,9 +177,9 @@ entity sab4z is
     m_axi_bresp:   in  std_logic_vector(1 downto 0);
     m_axi_bvalid:  in  std_logic
   );
-end entity sab4z;
+end entity sab4u;
 
-architecture rtl of sab4z is
+architecture rtl of sab4u is
 
   -- Record versions of AXI signals
   signal s0_axi_m2s: axilite_m2s;
@@ -190,19 +190,19 @@ architecture rtl of sab4z is
   signal m_axi_s2m: axi_s2m;
 
   -- STATUS register
-  signal status: std_ulogic_vector(31 downto 0);
+  signal status: std_ulogic_vector(63 downto 0);
 
-  alias life:    std_ulogic_vector(3 downto 0) is status(3 downto 0);
-  alias cnt:     std_ulogic_vector(3 downto 0) is status(7 downto 4);
-  alias arcnt:   std_ulogic_vector(3 downto 0) is status(11 downto 8);
-  alias rcnt:    std_ulogic_vector(3 downto 0) is status(15 downto 12);
-  alias awcnt:   std_ulogic_vector(3 downto 0) is status(19 downto 16);
-  alias wcnt:    std_ulogic_vector(3 downto 0) is status(23 downto 20);
-  alias bcnt:    std_ulogic_vector(3 downto 0) is status(27 downto 24);
-  alias slsw:    std_ulogic_vector(3 downto 0) is status(31 downto 28);
+  alias life:    std_ulogic_vector(7 downto 0) is status(7 downto 0);
+  alias cnt:     std_ulogic_vector(7 downto 0) is status(15 downto 8);
+  alias arcnt:   std_ulogic_vector(7 downto 0) is status(23 downto 16);
+  alias rcnt:    std_ulogic_vector(7 downto 0) is status(31 downto 24);
+  alias awcnt:   std_ulogic_vector(7 downto 0) is status(39 downto 32);
+  alias wcnt:    std_ulogic_vector(7 downto 0) is status(47 downto 40);
+  alias bcnt:    std_ulogic_vector(7 downto 0) is status(55 downto 48);
+  alias slsw:    std_ulogic_vector(7 downto 0) is status(63 downto 56);
 
   -- R register
-  signal r: std_ulogic_vector(31 downto 0);
+  signal r: std_ulogic_vector(63 downto 0);
 
   -- Or reduction of std_ulogic_vector
   function or_reduce(v: std_ulogic_vector) return std_ulogic is
@@ -235,32 +235,32 @@ begin
 
   -- LED outputs
   process(r, status, cnt, btn_sd)
-    variable m0: std_ulogic_vector(63 downto 0);
-    variable m1: std_ulogic_vector(31 downto 0);
-    variable m2: std_ulogic_vector(15 downto 0);
-    variable m3: std_ulogic_vector(7 downto 0);
-    variable m4: std_ulogic_vector(3 downto 0);
+    variable m0: std_ulogic_vector(127 downto 0);
+    variable m1: std_ulogic_vector(63 downto 0);
+    variable m2: std_ulogic_vector(31 downto 0);
+    variable m3: std_ulogic_vector(15 downto 0);
+    variable m4: std_ulogic_vector(7 downto 0);
   begin
     m0 := r & status;
     if cnt(3) = '1' then
-      m1 := m0(63 downto 32);
+      m1 := m0(127 downto 64);
     else
-      m1 := m0(31 downto 0);
+      m1 := m0(63 downto 0);
     end if;
     if cnt(2) = '1' then
-      m2 := m1(31 downto 16);
+      m2 := m1(63 downto 32);
     else
-      m2 := m1(15 downto 0);
+      m2 := m1(31 downto 0);
     end if;
     if cnt(1) = '1' then
-      m3 := m2(15 downto 8);
+      m3 := m2(31 downto 16);
     else
-      m3 := m2(7 downto 0);
+      m3 := m2(15 downto 0);
     end if;
     if cnt(0) = '1' then
-      m4 := m3(7 downto 4);
+      m4 := m3(15 downto 8);
     else
-      m4 := m3(3 downto 0);
+      m4 := m3(7 downto 0);
     end if;
     if btn_sd = '1' then
       m4 := cnt;
@@ -276,13 +276,13 @@ begin
   begin
     if rising_edge(aclk) then
       if aresetn = '0' then
-        life  <= X"1";
-        cnt   <= X"0";
-        arcnt <= X"0";
-        rcnt  <= X"0";
-        awcnt <= X"0";
-        wcnt  <= X"0";
-        bcnt  <= X"0";
+        life  <= X"01";
+        cnt   <= X"00";
+        arcnt <= X"00";
+        rcnt  <= X"00";
+        awcnt <= X"00";
+        wcnt  <= X"00";
+        bcnt  <= X"00";
         lifecnt := (others => '0');
         lifeleft2right := true;
       else
@@ -291,13 +291,13 @@ begin
         if lifecnt(lifecntwidth - 1) = '1' then
           lifecnt(lifecntwidth - 1) := '0';
           if lifeleft2right then
-            life <= life(0) & life(3 downto 1);
+            life <= life(0) & life(7 downto 1);
             if life(1) = '1' then
               lifeleft2right := not lifeleft2right;
             end if;
           else
-            life <= life(2 downto 0) & life(3);
-            if life(2) = '1' then
+            life <= life(6 downto 0) & life(7);
+            if life(6) = '1' then
               lifeleft2right := not lifeleft2right;
             end if;
           end if;
@@ -333,13 +333,8 @@ begin
   end process;
 
   -- Forwarding of S1_AXI read-write requests to M_AXI and of M_AXI responses to S1_AXI
-  s1_axi_to_m_axi: process(s1_axi_m2s, m_axi_s2m)
-  begin
-    m_axi_m2s <= s1_axi_m2s;
-    m_axi_m2s.araddr(31 downto 30) <= "00";
-    m_axi_m2s.awaddr(31 downto 30) <= "00";
-    s1_axi_s2m <= m_axi_s2m; 
-  end process s1_axi_to_m_axi;
+  m_axi_m2s <= s1_axi_m2s;
+  s1_axi_s2m <= m_axi_s2m; 
 
   -- S0_AXI read-write requests
   s0_axi_pr: process(aclk)
@@ -360,13 +355,13 @@ begin
         case state is
           when idle =>
             if s0_axi_m2s.awvalid = '1' and s0_axi_m2s.wvalid = '1' then -- Write address and data
-              if or_reduce(s0_axi_m2s.awaddr(31 downto 3)) /= '0' then -- If unmapped address
+              if or_reduce(s0_axi_m2s.awaddr(39 downto 4)) /= '0' then -- If unmapped address
                 s0_axi_s2m.bresp <= axi_resp_decerr;
-              elsif s0_axi_m2s.awaddr(2) = '0' then -- If read-only status register
+              elsif s0_axi_m2s.awaddr(3) = '0' then -- If read-only status register
                 s0_axi_s2m.bresp <= axi_resp_slverr;
               else
                 s0_axi_s2m.bresp <= axi_resp_okay;
-                for i in 0 to 3 loop
+                for i in 0 to 7 loop
                   if s0_axi_m2s.wstrb(i) = '1' then
                     r(8 * i + 7 downto 8 * i) <= s0_axi_m2s.wdata(8 * i + 7 downto 8 * i);
                   end if;
@@ -377,12 +372,12 @@ begin
               s0_axi_s2m.bvalid <= '1';
               state := w1;
             elsif s0_axi_m2s.arvalid = '1' then
-              if or_reduce(s0_axi_m2s.araddr(31 downto 3)) /= '0' then -- If unmapped address
+              if or_reduce(s0_axi_m2s.araddr(39 downto 4)) /= '0' then -- If unmapped address
                 s0_axi_s2m.rdata <= (others => '0');
                 s0_axi_s2m.rresp <= axi_resp_decerr;
               else
                 s0_axi_s2m.rresp <= axi_resp_okay;
-                if s0_axi_m2s.araddr(2) = '0' then -- If status register
+                if s0_axi_m2s.araddr(3) = '0' then -- If status register
                   s0_axi_s2m.rdata <= status;
                 else
                   s0_axi_s2m.rdata <= r;
@@ -411,13 +406,13 @@ begin
   end process s0_axi_pr;
 
   -- Record types to flat signals
-  s0_axi_m2s.araddr  <= std_ulogic_vector("00" & s0_axi_araddr);
+  s0_axi_m2s.araddr  <= std_ulogic_vector(s0_axi_araddr);
   s0_axi_m2s.arprot  <= std_ulogic_vector(s0_axi_arprot);
   s0_axi_m2s.arvalid <= s0_axi_arvalid;
 
   s0_axi_m2s.rready  <= s0_axi_rready;
 
-  s0_axi_m2s.awaddr  <= std_ulogic_vector("00" & s0_axi_awaddr);
+  s0_axi_m2s.awaddr  <= std_ulogic_vector(s0_axi_awaddr);
   s0_axi_m2s.awprot  <= std_ulogic_vector(s0_axi_awprot);
   s0_axi_m2s.awvalid <= s0_axi_awvalid;
 
@@ -441,11 +436,11 @@ begin
   s0_axi_bresp       <= std_logic_vector(s0_axi_s2m.bresp);
 
   s1_axi_m2s.arid    <= std_ulogic_vector(s1_axi_arid);
-  s1_axi_m2s.araddr  <= std_ulogic_vector("00" & s1_axi_araddr);
+  s1_axi_m2s.araddr  <= std_ulogic_vector(s1_axi_araddr);
   s1_axi_m2s.arlen   <= std_ulogic_vector(s1_axi_arlen);
   s1_axi_m2s.arsize  <= std_ulogic_vector(s1_axi_arsize);
   s1_axi_m2s.arburst <= std_ulogic_vector(s1_axi_arburst);
-  s1_axi_m2s.arlock  <= std_ulogic_vector(s1_axi_arlock);
+  s1_axi_m2s.arlock  <= s1_axi_arlock;
   s1_axi_m2s.arcache <= std_ulogic_vector(s1_axi_arcache);
   s1_axi_m2s.arprot  <= std_ulogic_vector(s1_axi_arprot);
   s1_axi_m2s.arqos   <= std_ulogic_vector(s1_axi_arqos);
@@ -454,11 +449,11 @@ begin
   s1_axi_m2s.rready  <= s1_axi_rready;
 
   s1_axi_m2s.awid    <= std_ulogic_vector(s1_axi_awid);
-  s1_axi_m2s.awaddr  <= std_ulogic_vector("00" & s1_axi_awaddr);
+  s1_axi_m2s.awaddr  <= std_ulogic_vector(s1_axi_awaddr);
   s1_axi_m2s.awlen   <= std_ulogic_vector(s1_axi_awlen);
   s1_axi_m2s.awsize  <= std_ulogic_vector(s1_axi_awsize);
   s1_axi_m2s.awburst <= std_ulogic_vector(s1_axi_awburst);
-  s1_axi_m2s.awlock  <= std_ulogic_vector(s1_axi_awlock);
+  s1_axi_m2s.awlock  <= s1_axi_awlock;
   s1_axi_m2s.awcache <= std_ulogic_vector(s1_axi_awcache);
   s1_axi_m2s.awprot  <= std_ulogic_vector(s1_axi_awprot);
   s1_axi_m2s.awqos   <= std_ulogic_vector(s1_axi_awqos);
@@ -493,7 +488,7 @@ begin
   m_axi_arlen        <= std_logic_vector(m_axi_m2s.arlen);
   m_axi_arsize       <= std_logic_vector(m_axi_m2s.arsize);
   m_axi_arburst      <= std_logic_vector(m_axi_m2s.arburst);
-  m_axi_arlock       <= std_logic_vector(m_axi_m2s.arlock);
+  m_axi_arlock       <= m_axi_m2s.arlock;
   m_axi_arcache      <= std_logic_vector(m_axi_m2s.arcache);
   m_axi_arprot       <= std_logic_vector(m_axi_m2s.arprot);
   m_axi_arqos        <= std_logic_vector(m_axi_m2s.arqos);
@@ -506,7 +501,7 @@ begin
   m_axi_awlen        <= std_logic_vector(m_axi_m2s.awlen);
   m_axi_awsize       <= std_logic_vector(m_axi_m2s.awsize);
   m_axi_awburst      <= std_logic_vector(m_axi_m2s.awburst);
-  m_axi_awlock       <= std_logic_vector(m_axi_m2s.awlock);
+  m_axi_awlock       <= m_axi_m2s.awlock;
   m_axi_awcache      <= std_logic_vector(m_axi_m2s.awcache);
   m_axi_awprot       <= std_logic_vector(m_axi_m2s.awprot);
   m_axi_awqos        <= std_logic_vector(m_axi_m2s.awqos);

@@ -11,24 +11,23 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-package axi_pkg is
+package axi64_pkg is
 
   ------------------------------------------------
   -- Bit-widths of AXI fields as seen by the PL --
   ------------------------------------------------
 
   -- Common to all AXI interfaces
-  constant axi_l: positive := 4;  -- len bit width
+  constant axi_l: positive := 8;  -- len bit width
   constant axi_b: positive := 2;  -- burst bit width
-  constant axi_a: positive := 32; -- address bit width
-  constant axi_o: positive := 2;  -- lock bit width
+  constant axi_a: positive := 40; -- address bit width
   constant axi_p: positive := 3;  -- prot bit width
   constant axi_c: positive := 4;  -- cache bit width
   constant axi_r: positive := 2;  -- resp bit width
   constant axi_q: positive := 4;  -- qos bit width
   constant axi_s: positive := 3;  -- size bit width
   constant axi_i: positive := 6;  -- id  bit width
-  constant axi_m: positive := 4;  -- strb bit width
+  constant axi_m: positive := 8;  -- strb bit width
   constant axi_d: positive := 8 * axi_m; -- data bit width
 
   constant axi_resp_okay:   std_ulogic_vector(axi_r - 1 downto 0) := "00";
@@ -52,7 +51,7 @@ package axi_pkg is
     arlen:   std_ulogic_vector(axi_l - 1 downto 0);
     arsize:  std_ulogic_vector(axi_s - 1 downto 0);
     arburst: std_ulogic_vector(axi_b - 1 downto 0);
-    arlock:  std_ulogic_vector(axi_o - 1 downto 0);
+    arlock:  std_ulogic;
     arcache: std_ulogic_vector(axi_c - 1 downto 0);
     arprot:  std_ulogic_vector(axi_p - 1 downto 0);
     arqos:   std_ulogic_vector(axi_q - 1 downto 0);
@@ -65,7 +64,7 @@ package axi_pkg is
     awlen:   std_ulogic_vector(axi_l - 1 downto 0);
     awsize:  std_ulogic_vector(axi_s - 1 downto 0);
     awburst: std_ulogic_vector(axi_b - 1 downto 0);
-    awlock:  std_ulogic_vector(axi_o - 1 downto 0);
+    awlock:  std_ulogic;
     awcache: std_ulogic_vector(axi_c - 1 downto 0);
     awprot:  std_ulogic_vector(axi_p - 1 downto 0);
     awqos:   std_ulogic_vector(axi_q - 1 downto 0);
@@ -138,4 +137,4 @@ package axi_pkg is
     bresp:   std_ulogic_vector(axi_r - 1 downto 0);
   end record;
 
-end package axi_pkg;
+end package axi64_pkg;

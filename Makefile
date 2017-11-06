@@ -119,7 +119,7 @@ $(MSTAGS): $(MSBUILD)/%.tag: $(HDLDIR)/%.vhd
 	@echo '[MSCOM] $<' && \
 	cd $(MSBUILD) && \
 	$(MSCOM) $(MSCOMFLAGS) $(rootdir)/$< && \
-	touch $(rootdir)/$@
+	touch $@
 
 $(MSTAGS): $(MSCONFIG)
 
@@ -131,6 +131,7 @@ $(MSCONFIG):
 	$(MSMAP) work .work $(OUTPUT)
 
 $(MSBUILD)/sab4z.tag: $(MSBUILD)/axi_pkg.tag $(MSBUILD)/debouncer.tag
+$(MSBUILD)/sab4u.tag: $(MSBUILD)/axi64_pkg.tag $(MSBUILD)/debouncer.tag
 
 ms-clean:
 	@echo '[RM] $(MSBUILD)' && \
