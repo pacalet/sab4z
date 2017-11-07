@@ -27,7 +27,8 @@ endif
 rootdir		:= $(realpath .)
 BUILD		?= /opt/builds
 HDLDIR		:= hdl
-HDLSRCS		:= $(wildcard $(HDLDIR)/*.vhd)
+HDLSRCS		:= $(addprefix $(HDLDIR)/,axi_pkg.vhd debouncer.vhd sab4z.vhd)
+HDLSRCS64	:= $(addprefix $(HDLDIR)/,axi64_pkg.vhd debouncer.vhd sab4u.vhd)
 SCRIPTS		:= scripts
 
 # Mentor Graphics Modelsim
@@ -39,12 +40,13 @@ MSCOM		:= vcom
 MSCOMFLAGS	:= -ignoredefaultbinding -nologo -quiet -2008
 MSSIM		:= vsim
 MSSIMFLAGS	:= -voptargs="+acc"
-MSTAGS		:= $(patsubst $(HDLDIR)/%.vhd,$(MSBUILD)/%.tag,$(HDLSRCS))
+MSTAGS		:= $(patsubst $(HDLDIR)/%.vhd,$(MSBUILD)/%.tag,$(sort $(HDLSRCS) $(HDLSRCS64)))
 
 # Xilinx Vivado
 ILA		?= 0
 VVMODE		?= batch
 VIVADO		:= vivado
+
 VVBUILD		?= $(BUILD)/vv
 VVSCRIPT	:= $(SCRIPTS)/vvsyn.tcl
 # Supported boards: zybo, zed, zc706
@@ -53,10 +55,19 @@ VIVADOFLAGS	:= -mode $(VVMODE) -notrace -source $(VVSCRIPT) -tempDir /tmp -journ
 VVIMPL		:= $(VVBUILD)/top.runs/impl_1
 VVBIT		:= $(VVIMPL)/top_wrapper.bit
 
+VVBUILD64	?= $(BUILD)/vv64
+VVSCRIPT64	:= $(SCRIPTS)/vvsyn64.tcl
+# Supported boards: zcu102
+VVBOARD64	?= zcu102
+VIVADOFLAGS64	:= -mode $(VVMODE) -notrace -source $(VVSCRIPT64) -tempDir /tmp -journal $(VVBUILD64)/vivado.jou -log $(VVBUILD64)/vivado.log -tclargs $(rootdir) $(VVBUILD64) $(VVBOARD64) $(ILA)
+VVIMPL64	:= $(VVBUILD64)/top.runs/impl_1
+VVBIT64		:= $(VVIMPL64)/top_wrapper.bit
+
 # Software Design Kits
 XDTS			?= /opt/downloads/device-tree-xlnx
 HSI			:= hsi
 SYSDEF			:= $(VVIMPL)/top_wrapper.sysdef
+SYSDEF64		:= $(VVIMPL64)/top_wrapper.sysdef
 DTSSCRIPT		:= $(SCRIPTS)/dts.tcl
 DTSFLAGS		:= -mode batch -quiet -notrace -nojournal -nolog -tempDir /tmp
 DTSBUILD		?= $(BUILD)/dts
@@ -72,8 +83,10 @@ make targets:
   make help       print this message (default goal)
   make ms-all     compile all VHDL source files with Modelsim ($(MSBUILD))
   make ms-clean   delete all files and directories automatically created by Modelsim
-  make vv-all     synthesize design with Vivado ($(VVBUILD))
-  make vv-clean   delete all files and directories automatically created by Vivado
+  make vv-all     synthesize 32 bits design with Vivado ($(VVBUILD))
+  make vv-clean   delete all 32 bits files and directories automatically created by Vivado
+  make vv64-all   synthesize 64 bits design with Vivado ($(VVBUILD))
+  make vv64-clean delete all 64 bits files and directories automatically created by Vivado
   make dts        generate device tree sources ($(DTSBUILD))
   make dts-clean  delete device tree sources
   make fsbl       generate First Stage Boot Loader (FSBL) sources ($(FSBLBUILD))
@@ -86,7 +99,8 @@ directories:
   hdl sources          ./$(HDLDIR)
   build                $(BUILD)
   Modelsim build       $(MSBUILD)
-  Vivado build         $(VVBUILD)
+  Vivado 32 bits build $(VVBUILD)
+  Vivado 64 bits build $(VVBUILD64)
   Device Tree Sources  $(DTSBUILD)
   FSBL sources         $(FSBLBUILD)
 
@@ -98,6 +112,8 @@ customizable make variables:
   VVMODE      Vivado running mode (gui, tcl or batch) ($(VVMODE))"
   VVBUILD     build directory for Xilinx Vivado ($(VVBUILD))
   VVBOARD     target board (zybo, zed or zc706) ($(VVBOARD))"
+  VVBUILD64   build directory for Xilinx Vivado ($(VVBUILD64))
+  VVBOARD64   target board (zybo, zed or zc706) ($(VVBOARD64))"
   XDTS        clone of Xilinx device trees git repository ($(XDTS))
   DTSBUILD    build directory for the device tree ($(DTSBUILD))
   FSBLBUILD   build directory for the First Stage Boot Loader ($(FSBLBUILD))
@@ -152,6 +168,20 @@ vv-clean:
 	@echo '[RM] $(VVBUILD)' && \
 	rm -rf $(VVBUILD)
 
+vv64-all: $(VVBIT64)
+
+$(VVBIT64): $(HDLSRCS64) $(VVSCRIPT64)
+	@echo '[VIVADO] $(VVSCRIPT64)' && \
+	mkdir -p $(VVBUILD64) && \
+	$(VIVADO) $(VIVADOFLAGS64)
+
+$(SYSDEF64):
+	@$(MAKE) vv64-all
+
+vv64-clean:
+	@echo '[RM] $(VVBUILD64)' && \
+	rm -rf $(VVBUILD64)
+
 # Device tree
 dts: $(DTSTOP)
 
@@ -194,4 +224,4 @@ doc-clean:
 	rm -rf $(PNGS)
 
 # Full clean
-clean: ms-clean vv-clean dts-clean fsbl-clean
+clean: ms-clean vv-clean vv64-clean dts-clean fsbl-clean

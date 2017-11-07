@@ -139,7 +139,7 @@ set_property range 1G [get_bd_addr_segs -of_object [get_bd_intf_pins /ps7/M_AXI_
 set_property offset 0x80000000 [get_bd_addr_segs -of_object [get_bd_intf_pins /ps7/M_AXI_GP1]]
 set_property range 1G [get_bd_addr_segs -of_object [get_bd_intf_pins /ps7/M_AXI_GP1]]
 set_property offset 0x00000000 [get_bd_addr_segs -of_object [get_bd_intf_pins /sab4z/m_axi]]
-set_property range 1G [get_bd_addr_segs -of_object [get_bd_intf_pins /sab4z/m_axi]]
+set_property range 512M [get_bd_addr_segs -of_object [get_bd_intf_pins /sab4z/m_axi]]
 
 # In-circuit debugging
 if { $ila == 1 } {

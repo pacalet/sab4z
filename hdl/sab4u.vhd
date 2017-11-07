@@ -30,13 +30,13 @@ entity sab4u is
     -- Inputs (master to slave) --
     ------------------------------
     -- Read address channel
-    s0_axi_araddr:  in  std_logic_vector(39 downto 0);
+    s0_axi_araddr:  in  std_logic_vector(11 downto 0);
     s0_axi_arprot:  in  std_logic_vector(2 downto 0);
     s0_axi_arvalid: in  std_logic;
     -- Read data channel
     s0_axi_rready:  in  std_logic;
     -- Write address channel
-    s0_axi_awaddr:  in  std_logic_vector(39 downto 0);
+    s0_axi_awaddr:  in  std_logic_vector(11 downto 0);
     s0_axi_awprot:  in  std_logic_vector(2 downto 0);
     s0_axi_awvalid: in  std_logic;
     -- Write data channel
@@ -68,8 +68,8 @@ entity sab4u is
     -- Inputs (master to slave) --
     ------------------------------
     -- Read address channel
-    s1_axi_arid:    in  std_logic_vector(5 downto 0);
-    s1_axi_araddr:  in  std_logic_vector(39 downto 0);
+    s1_axi_arid:    in  std_logic_vector(15 downto 0);
+    s1_axi_araddr:  in  std_logic_vector(30 downto 0);
     s1_axi_arlen:   in  std_logic_vector(7 downto 0);
     s1_axi_arsize:  in  std_logic_vector(2 downto 0);
     s1_axi_arburst: in  std_logic_vector(1 downto 0);
@@ -77,12 +77,13 @@ entity sab4u is
     s1_axi_arcache: in  std_logic_vector(3 downto 0);
     s1_axi_arprot:  in  std_logic_vector(2 downto 0);
     s1_axi_arqos:   in  std_logic_vector(3 downto 0);
+    s1_axi_aruser:  in  std_logic_vector(15 downto 0);
     s1_axi_arvalid: in  std_logic;
     -- Read data channel
     s1_axi_rready:  in  std_logic;
     -- Write address channel
-    s1_axi_awid:    in  std_logic_vector(5 downto 0);
-    s1_axi_awaddr:  in  std_logic_vector(39 downto 0);
+    s1_axi_awid:    in  std_logic_vector(15 downto 0);
+    s1_axi_awaddr:  in  std_logic_vector(30 downto 0);
     s1_axi_awlen:   in  std_logic_vector(7 downto 0);
     s1_axi_awsize:  in  std_logic_vector(2 downto 0);
     s1_axi_awburst: in  std_logic_vector(1 downto 0);
@@ -90,9 +91,9 @@ entity sab4u is
     s1_axi_awcache: in  std_logic_vector(3 downto 0);
     s1_axi_awprot:  in  std_logic_vector(2 downto 0);
     s1_axi_awqos:   in  std_logic_vector(3 downto 0);
+    s1_axi_awuser:  in  std_logic_vector(15 downto 0);
     s1_axi_awvalid: in  std_logic;
     -- Write data channel
-    s1_axi_wid:     in  std_logic_vector(5 downto 0);
     s1_axi_wdata:   in  std_logic_vector(63 downto 0);
     s1_axi_wstrb:   in  std_logic_vector(7 downto 0);
     s1_axi_wlast:   in  std_logic;
@@ -105,7 +106,7 @@ entity sab4u is
     -- Read address channel
     s1_axi_arready: out std_logic;
     -- Read data channel
-    s1_axi_rid:     out std_logic_vector(5 downto 0);
+    s1_axi_rid:     out std_logic_vector(15 downto 0);
     s1_axi_rdata:   out std_logic_vector(63 downto 0);
     s1_axi_rresp:   out std_logic_vector(1 downto 0);
     s1_axi_rlast:   out std_logic;
@@ -115,7 +116,7 @@ entity sab4u is
     -- Write data channel
     s1_axi_wready:  out std_logic;
     -- Write response channel
-    s1_axi_bid:     out std_logic_vector(5 downto 0);
+    s1_axi_bid:     out std_logic_vector(15 downto 0);
     s1_axi_bresp:   out std_logic_vector(1 downto 0);
     s1_axi_bvalid:  out std_logic;
 
@@ -127,7 +128,7 @@ entity sab4u is
     -------------------------------
     -- Read address channel
     m_axi_arid:    out std_logic_vector(5 downto 0);
-    m_axi_araddr:  out std_logic_vector(39 downto 0);
+    m_axi_araddr:  out std_logic_vector(30 downto 0);
     m_axi_arlen:   out std_logic_vector(7 downto 0);
     m_axi_arsize:  out std_logic_vector(2 downto 0);
     m_axi_arburst: out std_logic_vector(1 downto 0);
@@ -135,12 +136,13 @@ entity sab4u is
     m_axi_arcache: out std_logic_vector(3 downto 0);
     m_axi_arprot:  out std_logic_vector(2 downto 0);
     m_axi_arqos:   out std_logic_vector(3 downto 0);
+    m_axi_aruser:  out std_logic;
     m_axi_arvalid: out std_logic;
     -- Read data channel
     m_axi_rready:  out std_logic;
     -- Write address channel
     m_axi_awid:    out std_logic_vector(5 downto 0);
-    m_axi_awaddr:  out std_logic_vector(39 downto 0);
+    m_axi_awaddr:  out std_logic_vector(30 downto 0);
     m_axi_awlen:   out std_logic_vector(7 downto 0);
     m_axi_awsize:  out std_logic_vector(2 downto 0);
     m_axi_awburst: out std_logic_vector(1 downto 0);
@@ -148,9 +150,9 @@ entity sab4u is
     m_axi_awcache: out std_logic_vector(3 downto 0);
     m_axi_awprot:  out std_logic_vector(2 downto 0);
     m_axi_awqos:   out std_logic_vector(3 downto 0);
+    m_axi_awuser:  out std_logic;
     m_axi_awvalid: out std_logic;
     -- Write data channel
-    m_axi_wid:     out std_logic_vector(5 downto 0);
     m_axi_wdata:   out std_logic_vector(63 downto 0);
     m_axi_wstrb:   out std_logic_vector(7 downto 0);
     m_axi_wlast:   out std_logic;
@@ -182,12 +184,12 @@ end entity sab4u;
 architecture rtl of sab4u is
 
   -- Record versions of AXI signals
-  signal s0_axi_m2s: axilite_m2s;
-  signal s0_axi_s2m: axilite_s2m;
-  signal s1_axi_m2s: axi_m2s;
-  signal s1_axi_s2m: axi_s2m;
-  signal m_axi_m2s: axi_m2s;
-  signal m_axi_s2m: axi_s2m;
+  signal s0_axi_m2s: s0_axi_m2s_t;
+  signal s0_axi_s2m: s0_axi_s2m_t;
+  signal s1_axi_m2s: s1_axi_m2s_t;
+  signal s1_axi_s2m: s1_axi_s2m_t;
+  signal m_axi_m2s: m_axi_m2s_t;
+  signal m_axi_s2m: m_axi_s2m_t;
 
   -- STATUS register
   signal status: std_ulogic_vector(63 downto 0);
@@ -333,8 +335,8 @@ begin
   end process;
 
   -- Forwarding of S1_AXI read-write requests to M_AXI and of M_AXI responses to S1_AXI
-  m_axi_m2s <= s1_axi_m2s;
-  s1_axi_s2m <= m_axi_s2m; 
+  m_axi_m2s <= to_m_axi_m2s_t(s1_axi_m2s);
+  s1_axi_s2m <= to_s1_axi_s2m_t(m_axi_s2m);
 
   -- S0_AXI read-write requests
   s0_axi_pr: process(aclk)
@@ -355,7 +357,7 @@ begin
         case state is
           when idle =>
             if s0_axi_m2s.awvalid = '1' and s0_axi_m2s.wvalid = '1' then -- Write address and data
-              if or_reduce(s0_axi_m2s.awaddr(39 downto 4)) /= '0' then -- If unmapped address
+              if or_reduce(s0_axi_m2s.awaddr(11 downto 4)) /= '0' then -- If unmapped address
                 s0_axi_s2m.bresp <= axi_resp_decerr;
               elsif s0_axi_m2s.awaddr(3) = '0' then -- If read-only status register
                 s0_axi_s2m.bresp <= axi_resp_slverr;
@@ -372,7 +374,7 @@ begin
               s0_axi_s2m.bvalid <= '1';
               state := w1;
             elsif s0_axi_m2s.arvalid = '1' then
-              if or_reduce(s0_axi_m2s.araddr(39 downto 4)) /= '0' then -- If unmapped address
+              if or_reduce(s0_axi_m2s.araddr(11 downto 4)) /= '0' then -- If unmapped address
                 s0_axi_s2m.rdata <= (others => '0');
                 s0_axi_s2m.rresp <= axi_resp_decerr;
               else
@@ -459,7 +461,6 @@ begin
   s1_axi_m2s.awqos   <= std_ulogic_vector(s1_axi_awqos);
   s1_axi_m2s.awvalid <= s1_axi_awvalid;
 
-  s1_axi_m2s.wid     <= std_ulogic_vector(s1_axi_wid);
   s1_axi_m2s.wdata   <= std_ulogic_vector(s1_axi_wdata);
   s1_axi_m2s.wstrb   <= std_ulogic_vector(s1_axi_wstrb);
   s1_axi_m2s.wlast   <= s1_axi_wlast;
@@ -492,6 +493,7 @@ begin
   m_axi_arcache      <= std_logic_vector(m_axi_m2s.arcache);
   m_axi_arprot       <= std_logic_vector(m_axi_m2s.arprot);
   m_axi_arqos        <= std_logic_vector(m_axi_m2s.arqos);
+  m_axi_aruser       <= m_axi_m2s.aruser;
   m_axi_arvalid      <= m_axi_m2s.arvalid;
 
   m_axi_rready       <= m_axi_m2s.rready;
@@ -505,9 +507,9 @@ begin
   m_axi_awcache      <= std_logic_vector(m_axi_m2s.awcache);
   m_axi_awprot       <= std_logic_vector(m_axi_m2s.awprot);
   m_axi_awqos        <= std_logic_vector(m_axi_m2s.awqos);
+  m_axi_awuser       <= m_axi_m2s.awuser;
   m_axi_awvalid      <= m_axi_m2s.awvalid;
 
-  m_axi_wid          <= std_logic_vector(m_axi_m2s.wid);
   m_axi_wdata        <= std_logic_vector(m_axi_m2s.wdata);
   m_axi_wstrb        <= std_logic_vector(m_axi_m2s.wstrb);
   m_axi_wlast        <= m_axi_m2s.wlast;

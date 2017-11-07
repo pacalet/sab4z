@@ -464,7 +464,6 @@ begin
   s1_axi_m2s.awqos   <= std_ulogic_vector(s1_axi_awqos);
   s1_axi_m2s.awvalid <= s1_axi_awvalid;
 
-  s1_axi_m2s.wid     <= std_ulogic_vector(s1_axi_wid);
   s1_axi_m2s.wdata   <= std_ulogic_vector(s1_axi_wdata);
   s1_axi_m2s.wstrb   <= std_ulogic_vector(s1_axi_wstrb);
   s1_axi_m2s.wlast   <= s1_axi_wlast;
@@ -512,7 +511,6 @@ begin
   m_axi_awqos        <= std_logic_vector(m_axi_m2s.awqos);
   m_axi_awvalid      <= m_axi_m2s.awvalid;
 
-  m_axi_wid          <= std_logic_vector(m_axi_m2s.wid);
   m_axi_wdata        <= std_logic_vector(m_axi_m2s.wdata);
   m_axi_wstrb        <= std_logic_vector(m_axi_m2s.wstrb);
   m_axi_wlast        <= m_axi_m2s.wlast;

@@ -71,7 +71,6 @@ package axi_pkg is
     awqos:   std_ulogic_vector(axi_q - 1 downto 0);
     awvalid: std_ulogic;
     -- Write data channel
-    wid:     std_ulogic_vector(axi_i - 1 downto 0);
     wdata:   std_ulogic_vector(axi_d - 1 downto 0);
     wstrb:   std_ulogic_vector(axi_m - 1 downto 0);
     wlast:   std_ulogic;
