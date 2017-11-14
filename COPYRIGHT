@@ -1,4 +1,5 @@
-Copyright (C) Institut Mines-Telecom / Telecom ParisTech
+Copyright (C) Telecom ParisTech
+Copyright (C) Renaud Pacalet (renaud.pacalet@telecom-paristech.fr)
 
 This repository and its sub-directories contain the VHDL source code, VHDL
 simulation environment, simulation and synthesis scripts of a simple design

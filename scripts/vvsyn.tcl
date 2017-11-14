@@ -1,5 +1,6 @@
 #
 # Copyright (C) Telecom ParisTech
+# Copyright (C) Renaud Pacalet (renaud.pacalet@telecom-paristech.fr)
 # 
 # This file must be used under the terms of the CeCILL. This source
 # file is licensed as described in the file COPYING, which you should
@@ -24,6 +25,7 @@ if { $argc == 4 } {
 	if { [ string equal $board "zybo" ] } {
 		set part "xc7z010clg400-1"
 		set board "digilentinc.com:zybo:part0:1.0"
+		set range 512M
 		array set ios {
 			"sw[0]"         { "G15" "LVCMOS33" }
 			"sw[1]"         { "P15" "LVCMOS33" }
@@ -38,6 +40,7 @@ if { $argc == 4 } {
 	} elseif { [ string equal $board "zed" ] } { 
 		set part "xc7z020clg484-1"
 		set board "em.avnet.com:zed:part0:1.3"
+		set range 512M
 		array set ios {
 			"sw[0]"         { "F22"  "LVCMOS25" }
 			"sw[1]"         { "G22"  "LVCMOS25" }
@@ -52,6 +55,7 @@ if { $argc == 4 } {
 	} elseif { [ string equal $board "zc706" ] } { 
 		set part "xc7z045ffg900-2"
 		set board "xilinx.com:zc706:part0:1.3"
+		set range 1G
 		array set ios {
 			"sw[0]"         { "AB17" "LVCMOS25" }
 			"sw[1]"         { "AC16" "LVCMOS25" }
@@ -95,7 +99,7 @@ source $rootdir/scripts/ila.tcl
 # Create SAB4Z IP #
 ###################
 create_project -part $part -force sab4z sab4z
-add_files $rootdir/hdl/axi_pkg.vhd $rootdir/hdl/debouncer.vhd $rootdir/hdl/sab4z.vhd
+add_files $rootdir/hdl/sab4z.vhd
 import_files -force -norecurse
 ipx::package_project -root_dir sab4z -vendor www.telecom-paristech.fr -library SAB4Z -force sab4z
 close_project
@@ -139,7 +143,7 @@ set_property range 1G [get_bd_addr_segs -of_object [get_bd_intf_pins /ps7/M_AXI_
 set_property offset 0x80000000 [get_bd_addr_segs -of_object [get_bd_intf_pins /ps7/M_AXI_GP1]]
 set_property range 1G [get_bd_addr_segs -of_object [get_bd_intf_pins /ps7/M_AXI_GP1]]
 set_property offset 0x00000000 [get_bd_addr_segs -of_object [get_bd_intf_pins /sab4z/m_axi]]
-set_property range 1G [get_bd_addr_segs -of_object [get_bd_intf_pins /sab4z/m_axi]]
+set_property range $range [get_bd_addr_segs -of_object [get_bd_intf_pins /sab4z/m_axi]]
 
 # In-circuit debugging
 if { $ila == 1 } {
@@ -204,7 +208,23 @@ wait_on_run $run
 # Messages
 set rundir ${builddir}/$top.runs/$run
 puts ""
+puts "*********************************************"
 puts "\[VIVADO\]: done"
+puts "*********************************************"
+puts "Summary of build parameters"
+puts "*********************************************"
+puts "Board: $board"
+puts "Part: $part"
+puts "Root directory: $rootdir"
+puts "Build directory: $builddir"
+puts -nonewline "Integrated Logic Analyzer: "
+if { $ila == 0 } {
+	puts "no"
+} else {
+	puts "yes"
+}
+puts "*********************************************"
 puts "  bitstream in $rundir/${top}_wrapper.bit"
 puts "  resource utilization report in $rundir/${top}_wrapper_utilization_placed.rpt"
 puts "  timing report in $rundir/${top}_wrapper_timing_summary_routed.rpt"
+puts "*********************************************"

@@ -5,37 +5,36 @@ All provided instructions are for a host computer running a GNU/Linux operating 
 Please signal errors and send suggestions for improvements to renaud.pacalet@telecom-paristech.fr.
 
 # Table of content
-* [License](#License)
-* [Useful links](#Links)
-* [Conventions](#Conventions)
-* [Content](#Content)
-* [Description](#Description)
-* [Quick start](#Quick)
-* [Build everything from scratch](#Build)
-    * [Downloads](#BuildDownloads)
-    * [Hardware synthesis](#BuildSynthesis)
-    * [Build a cross-compilation toolchain](#BuildToolChain)
-    * [Build a root file system](#BuildRootFs)
-    * [Build the Linux kernel](#BuildKernel)
-    * [Build U-Boot](#BuildUboot)
-    * [Build the hardware dependant software](#BuildHwDepSw)
-* [Going further](#Further)
-    * [Set up a network interface on the board](#FurtherNetwork)
-    * [Create a local network between host and board](#FurtherDnsmasq)
-    * [Transfer files from host PC to board without a network interface](#FurtherFileTransfer)
-    * [Run a user application on the board](#FurtherUserApp)
-    * [Debug a user application with gdb](#FurtherUserAppDebug)
-    * [Access SAB4Z from a user application on the board](#FurtherSab4zApp)
-    * [Add a Linux driver for SAB4Z](#FurtherSab4zLinuxDriver)
-    * [Run the complete software stack across SAB4Z](#FurtherRunAcrossSab4z)
-    * [Debug hardware using ILA](#FurtherIla)
-* [Glossary](#Glossary)
-* [FAQ](#FAQ)
+* [License](#license)
+* [Useful links](#useful-links)
+* [Conventions](#conventions)
+* [Content](#content)
+* [Description](#description)
+* [Quick start](#quick-start)
+* [Build everything from scratch](#build-everything-from-scratch)
+    * [Hardware synthesis](#hardware-synthesis)
+    * [Build a cross-compilation toolchain](#build-a-cross-compilation-toolchain)
+    * [Build a root file system](#build-a-root-file-system)
+    * [Build the Linux kernel](#build-the-linux-kernel)
+    * [Build U-Boot](#build-u-boot)
+    * [Build the hardware dependant software](#build-the-hardware-dependant-software)
+* [Going further](#going-further)
+    * [Set up a network interface on the board](#set-up-a-network-interface-on-the-board)
+    * [Create a local network between host and board](#create-a-local-network-between-host-and-board)
+    * [Transfer files from host PC to board without a network interface](#transfer-files-from-host-pc-to-board-without-a-network-interface)
+    * [Create, compile and run a user software application](#create-compile-and-run-a-user-software-application)
+    * [Debug a user application with gdb](#debug-a-user-application-with-gdb)
+    * [Access SAB4Z from a user software application](#access-sab4z-from-a-user-software-application)
+    * [Add a Linux driver for SAB4Z](#add-a-linux-driver-for-sab4z)
+    * [Run the complete software stack across SAB4Z](#run-the-complete-software-stack-across-sab4z)
+    * [Debug hardware using ILA](#debug-hardware-using-ila)
+* [Frequently Asked Questions (FAQ)](#frequently-asked-questions-faq)
+* [Glossary](#glossary)
 
-# <a name="License"></a>License
+# License
 
-Copyright Telecom ParisTech  
-Copyright Renaud Pacalet (renaud.pacalet@telecom-paristech.fr)
+Copyright (C) Telecom ParisTech  
+Copyright (C) Renaud Pacalet (renaud.pacalet@telecom-paristech.fr)
 
 Licensed uder the CeCILL license, Version 2.1 of
 2013-06-21 (the "License"). You should have
@@ -44,7 +43,7 @@ obtain a copy of the License at:
 
 http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
 
-# <a name="Links"></a>Useful links
+# Useful links
 
 * [ARM](http://www.arm.com/)
 * [Buildroot](https://buildroot.org/)
@@ -59,7 +58,7 @@ http://www.cecill.info/licences/Licence_CeCILL_V2.1-en.txt
 * [Xilinx](http://www.xilinx.com/)
 * [ZedBoard.org](http://www.zedboard.org/)
 
-# <a name="Conventions"></a>Conventions
+# Conventions
 
 Throughout this documentation we will use different prompts for the different contexts:
 
@@ -68,47 +67,47 @@ Throughout this documentation we will use different prompts for the different co
 * `Zynq>` is the U-Boot prompt on the board (more on U-Boot later).
 * `Sab4z>` is the shell prompt of the root user on the board (the only one we will use on the board).
 
-# <a name="Content"></a>Content
+# Content
 
+```
+├── C                             C source code
+│   ├── hello_world.c             Simple example user application
+│   ├── libsab4z.c                User-space part of Linux driver
+│   ├── libsab4z.h                User-space part of Linux driver (header)
+│   ├── Makefile                  Makefile for software
+│   ├── sab4z.c                   User application using SAB4Z
+│   ├── sab4z_driver.c            Kernel-space part of Linux driver
+│   ├── sab4z_driver.h            Kernel-space part of Linux driver (header)
+│   └── test_sab4z_driver.c       Linux driver test application
+├── COPYING                       License (English version)
+├── COPYING-FR                    Licence (version française)
+├── COPYRIGHT                     Copyright notice
+├── hdl                           VHDL source code
+│   ├── sab4z_sim.vhd             Simulation environment for SAB4Z
+│   └── sab4z.vhd                 Top-level SAB4Z
+├── images                        Figures
+│   ├── sab4z.fig                 SAB4Z in Zynq
+│   ├── sab4z.png                 PNG export of sab4z.fig
+│   ├── zybo1.fig                 Commented Zybo board picture
+│   ├── zybo1.png                 PNG export ofzybo1.fig
+│   └── zybo.png                  Zybo board picture
+├── Makefile                      Main makefile
+├── README.md                     This file
+└── scripts                       Scripts
+    ├── boot.bif                  Zynq Boot Image description File
+    ├── buildroot_defconfig       Buildroot configuration
+    ├── build.sh                  Build script
+    ├── dropbear_ecdsa_host_key   ECDSA host key for Zynq board
+    ├── dts.tcl                   TCL script for device tree generation
+    ├── fsbl.tcl                  TCL script for FSBL generation
+    ├── ila.tcl                   TCL script for ILA debug cores
+    ├── sab4z_rsa                 RSA private key for ssh communication with Zynq board
+    ├── sab4z_rsa.pub             RSA public key for ssh communication with Zynq board
+    ├── uEnv.txt                  Definitions of U-Boot environment variables
+    └── vvsyn.tcl                 Vivado TCL synthesis script
+```
 
-    ├── C                             C source code
-    │   ├── hello_world.c             Simple example user application
-    │   ├── libsab4z.c                User-space part of Linux driver
-    │   ├── libsab4z.h                User-space part of Linux driver (header)
-    │   ├── Makefile                  Makefile for software
-    │   ├── sab4z.c                   User application using SAB4Z
-    │   ├── sab4z_driver.c            Kernel-space part of Linux driver
-    │   ├── sab4z_driver.h            Kernel-space part of Linux driver (header)
-    │   └── test_sab4z_driver.c       Linux driver test application
-    ├── COPYING                       License (English version)
-    ├── COPYING-FR                    Licence (version française)
-    ├── COPYRIGHT                     Copyright notice
-    ├── hdl                           VHDL source code
-    │   ├── axi_pkg.vhd               Package of AXI definitions
-    │   ├── debouncer.vhd             Debouncer-resynchronizer
-    │   └── sab4z.vhd                 Top-level SAB4Z
-    ├── images                        Figures
-    │   ├── sab4z.fig                 SAB4Z in Zynq
-    │   ├── sab4z.png                 PNG export of sab4z.fig
-    │   ├── zybo1.fig                 Commented Zybo board picture
-    │   ├── zybo1.png                 PNG export ofzybo1.fig
-    │   └── zybo.png                  Zybo board picture
-    ├── Makefile                      Main makefile
-    ├── README.md                     This file
-    └── scripts                       Scripts
-        ├── boot.bif                  Zynq Boot Image description File
-        ├── buildroot_defconfig       Buildroot configuration
-        ├── build.sh                  Build script
-        ├── dropbear_ecdsa_host_key   ECDSA host key for Zynq board
-        ├── dts.tcl                   TCL script for device tree generation
-        ├── fsbl.tcl                  TCL script for FSBL generation
-        ├── ila.tcl                   TCL script for ILA debug cores
-        ├── sab4z_rsa                 RSA private key for ssh communication with Zynq board
-        ├── sab4z_rsa.pub             RSA public key for ssh communication with Zynq board
-        ├── uEnv.txt                  Definitions of U-Boot environment variables
-        └── vvsyn.tcl                 Vivado TCL synthesis script
-
-# <a name="Description"></a>Description
+# Description
 
 **SAB4Z** is a **S**imple **A**xi-to-axi **B**ridge **F**or **Z**ynq cores with a lite AXI slave port (S0_AXI) an AXI slave port (S1_AXI), a master AXI port (M_AXI), two internal registers (STATUS and R), a 4-bits input (SW), a 4-bits output (LED) and a one-bit command input (BTN). Its VHDL synthesizable model is available in the `hdl` sub-directory. The following figure represents SAB4Z mapped in the Programmable Logic (PL) of the Zynq core.
 
@@ -180,9 +179,9 @@ The following table summarizes the IO mapping for the currently supported boards
 | ZC706    | BTN  | SW8 (rightmost user push-button)          |
 | ZC706    | LED  | DS8-DS10, DS35 (4 user LEDs)              |
 
-# <a name="Quick"></a>Quick start
+# Quick start
 
-## <a name="Archive"></a>Installing SAB4Z from the archive
+## Installing SAB4Z from the archive
 
 Download the archive that corresponds to your board (replace `BOARD` by `zybo`, `zed` or `zc706` in the `wget` URL), insert a SD card in your card reader and unpack the archive to it:
 
@@ -195,7 +194,7 @@ Download the archive that corresponds to your board (replace `BOARD` by `zybo`, 
 
 Eject the SD card.
 
-## <a name="Run"></a>Testing SAB4Z on the board
+## Testing SAB4Z on the board
 
 * Plug the SD card in your board and connect the USB cable.
 * Check the position of the blue jumper that selects the boot medium (SD card).
@@ -220,7 +219,7 @@ keep trying, it should finally work.
     sab4z login: root
     Sab4z>
 
-### <a name="RunReadStatus"></a>Read the STATUS register (address `0x4000_0000`)
+### Read the STATUS register (address `0x4000_0000`)
 
 To access the SAB4Z memory spaces you can use devmem, a Busybox utility that allows to access memory locations with their physical addresses. It is privileged but as we are root... Let us first read the content of the 32-bits status register at address `0x4000_0000`:
 
@@ -236,7 +235,7 @@ As can be seen, the content of the STATUS register is all zeroes, except its 4 L
     Sab4z> devmem 0x40000000 32
     0x50000002
 
-### <a name="RunReadWriteR"></a>Read and write the R register (address `0x4000_0004`)
+### Read and write the R register (address `0x4000_0004`)
 
     Sab4z> devmem 0x40000004 32
     0x00000000
@@ -244,7 +243,7 @@ As can be seen, the content of the STATUS register is all zeroes, except its 4 L
     Sab4z> devmem 0x40000004 32
     0x12345678
 
-### <a name="RunReadDDR"></a>Read DDR locations
+### Read DDR locations
 
     Sab4z> devmem 0x01000000 32
     0x4D546529
@@ -263,11 +262,11 @@ As expected, the `0x0100_0000` and `0x8100_0000` addresses store the same value 
 
 The read counters have again been incremented because of the read access at `0x8200_0000`. The 3 write counters (AWCNT, WCNT and BCNT) have also been incremented by the write access at `0x8200_0000`.
 
-### <a name="RunPushButton"></a>Press the push-button, select LED driver
+### Press the push-button, select LED driver
 
 If we press the push-button and do not release it yet, the LEDs display `0001`, the new value of the incremented CNT. If we release the button the LEDs still display `0001` because when CNT=1 their are driven by... CNT. Press and release the button once more and check that the LEDs display `0010`, the current value of ARCNT. Continue exploring the 16 possible values of CNT and check that the LEDs display what they should.
 
-### <a name="RunHalt"></a>Halt the system
+### Halt the system
 
 Always halt properly before switching the power off:
 
@@ -282,7 +281,7 @@ Always halt properly before switching the power off:
     Requesting system poweroff
     reboot: System halted
 
-# <a name="Build"></a>Build everything from scratch
+# Build everything from scratch
 
 The embedded system world sometimes looks overcomplicated to non-specialists. But most of this complexity comes from the large number of small things that make this world, not really from the complexity of these small things themselves. Understanding large portions of this exciting field is perfectly feasible, even without a strong background in computer sciences. And, of course, doing things alone is probably one of the best ways to understand them. In the following we will progressively build a complete computer system based on a Zynq-based board, with custom hardware extensions, and running a GNU/Linux operating system.
 
@@ -305,7 +304,7 @@ The instructions introduce new concepts one after the other, with the advantage 
 
 In the following we download all components in subdirectories of `/opt/downloads` and build in subdirectories of `/opt/builds`. Adapt to your own situation.
 
-## <a name="BuildSynthesis"></a>Hardware synthesis
+## Hardware synthesis
 
 Clone the SAB4Z git repository:
 
@@ -325,7 +324,7 @@ The hardware synthesis produces a bitstream file from the VHDL source code in `h
 
 The generated bitstream is `/opt/builds/vv/top.runs/impl_1/top_wrapper.bit`. This binary file is used to configure the FPGA part of the Zynq core of the board such that it implements our VHDL design. A binary description of our hardware design is also available in `/opt/builds/vv/top.runs/impl_1/top_wrapper.sysdef`. It is not human-readable but we will use it later to generate the device tree sources and the First Stage Boot Loader (FSBL) sources.
 
-## <a name="BuildToolChain"></a>Build a cross-compilation toolchain
+## Build a cross-compilation toolchain
 
 In order to compile and link software components on our host computer (x86 architecture) but run them on the target board (ARM architecture) we need a cross-compilation toolchain. We can use an existing one, like the one that comes with the Xilinx tools (in the `gnu/arm/lin` subdirectory of the Xilinx SDK installation directory) or download one from one of many providers (e.g. Linaro). The good point with this approach is that it is simpler and faster than building a toolchain from scratch. The drawback is that we cannot tune the toolchain and that we do not learn how to build a toolchain. We can also let Buildroot build a toolchain but it is not the recommended way because it would have to be redone each time we change some important parameters of the Buildroot configuration. And building a toolchain takes time. The best option is to use crosstool-NG and build our own toolchain from scratch, once for all.
 
@@ -402,7 +401,7 @@ Add the toolchain to your `PATH` and test:
 
 That's it. We now have a complete toolchain for 32 bits ARM processors with hardware Floating Point Unit (FPU) support. We can use it on our host PC to compile all software components for our target board. And, of course, we can use it for other ARM-based projects too. We can even build toolchains for other targets (x86, Mips, Sparc...) if needed.
 
-## <a name="BuildRootFs"></a>Build a root file system
+## Build a root file system
 
 Do not start this part before the toolchain is built: it is needed.
 
@@ -510,7 +509,7 @@ They are in `/opt/builds/rootfs/host/usr/bin`. Buildroot also copied our toolcha
     Host> export PATH=$PATH:/opt/builds/rootfs/host/usr/bin
     Host> export CROSS_COMPILE=arm-unknown-linux-gnueabihf-
 
-## <a name="BuildKernel"></a>Build the Linux kernel
+## Build the Linux kernel
 
 Do not start this part before the toolchain is built: it is needed.
 
@@ -586,7 +585,7 @@ The root file system `/opt/builds/rootfs/images/rootfs.cpio.uboot` now contains 
     ./lib/modules/4.4.0-xilinx-34555-g7a003fc/modules.devname
     ./lib/modules/4.4.0-xilinx-34555-g7a003fc/modules.builtin
 
-## <a name="BuildUboot"></a>Build U-Boot
+## Build U-Boot
 
 Do not start this part before the toolchain is built: it is needed.
 
@@ -630,11 +629,11 @@ Again, the result of U-Boot build is available in different formats. The one we 
 
     Host> cp /opt/builds/uboot/u-boot /opt/builds/uboot/u-boot.elf
 
-## <a name="BuildHwDepSw"></a>Build the hardware dependant software
+## Build the hardware dependant software
 
 Do not start this part before the hardware synthesis finishes finishes and the root file system is built: they are needed.
 
-### <a name="BuildHWDepSWDTS"></a>Linux kernel device tree
+### Linux kernel device tree
 
 SAB4Z comes with a Makefile and a TCL script that automate the generation of device tree sources using the Xilinx hsi utility, the clone of the git repository of Xilinx device trees (`<some-path>/device-tree-xlnx`) and the description of our hardware design that was generated during the hardware synthesis (`/opt/builds/vv/top.runs/impl_1/top_wrapper.sysdef`). First clone the git repository of Xilinx device trees:
 
@@ -658,7 +657,7 @@ The sources are in `/opt/builds/dts`, the top level is `/opt/builds/dts/system.d
     Host> cd /opt/builds
     Host> dtc -I dts -O dtb -o devicetree.dtb dts/system.dts
 
-### <a name="BuildHWDepSWFSBL"></a>First Stage Boot Loader (FSBL)
+### First Stage Boot Loader (FSBL)
 
 Generate the FSBL sources:
 
@@ -669,14 +668,14 @@ The sources are in `/opt/builds/fsbl`. If needed, edit them before compiling the
 
     Host> make -C /opt/builds/fsbl
 
-### <a name="BuildHWDepSWBootImg"></a>Zynq boot image
+### Zynq boot image
 
 A Zynq boot image is a file that is read from the boot medium of the board when the board is powered on. It contains the FSBL ELF, the bitstream and the U-Boot ELF. Generate the Zynq boot image with the Xilinx bootgen utility and the provided boot image description file:
 
     Host> cd /opt/builds
     Host> bootgen -w -image /opt/downloads/sab4z/scripts/boot.bif -o boot.bin
 
-### <a name="BuildHWDepSWSDCard"></a>Prepare the SD card
+### Prepare the SD card
 
 Finally, prepare a SD card with a FAT32 first primary partition (8MB minimum), mount it on your host PC, and copy the different components to it:
 
@@ -691,9 +690,9 @@ Finally, prepare a SD card with a FAT32 first primary partition (8MB minimum), m
 
 Eject the SD card, plug it in the board and power on.
 
-# <a name="Further"></a>Going further
+# Going further
 
-## <a name="FurtherNetwork"></a>Set up a network interface on the board
+## Set up a network interface on the board
 
 The serial interface that we use to interact with the board is limited both in terms of bandwidth and functionality. Transferring files between the host and the board, for instance, even if not impossible through the serial interface, is overcomplicated and unreliable. This section will show you how to set up a much more powerful and convenient network interface between host and board. In order to do this we will connect the board to a wired network using an Ethernet cable. Note that if you do not have a wired network or if, for security reasons, you cannot use your existing wired network, it is possible to create a point-to-point Ethernet network between your host and the board.
 
@@ -792,7 +791,7 @@ Finally, on the board, unmount the SD card and reboot:
 
 We should now be able to `ssh` or `scp` from host to board without password, even after rebooting.
 
-## <a name="FurtherDnsmasq"></a>Create a local network between host and board
+## Create a local network between host and board
 
 Under GNU/Linux, dnsmasq is a very convenient way to create a point-to-point Ethernet network between your host and the board. It even allows to share the wireless connection of a laptop with the board. To install dnsmasq on Debian:
 
@@ -845,11 +844,11 @@ And of course, you can also `scp`:
     -rw-------    1 root     root             0 Jan  1 00:03 foo
     ...
 
-## <a name="FurtherFileTransfer"></a>Transfer files from host PC to board without a network interface
+## Transfer files from host PC to board without a network interface
 
 A network interface should always be preferred to transfer files from the host to the board: it is fast, reliable and it avoids manipulating the delicate SD card. Here are several alternate ways, in case you cannot set up a network interface between your host and the board.
 
-### <a name="FurtherFileTransferSD"></a>Use the SD card
+### Use the SD card
 
 By default the SD card is not mounted on the root file system of the board but it can be. This is a way to import / export data or even custom applications to / from the host PC (of course, a network interface is much better). Simply add files to the SD card from the host PC and they will show up on the board once the SD card is mounted. Mount the SD card on your host PC, copy the files to transfer on it, unmount and eject the SD card:
 
@@ -877,7 +876,7 @@ Do not forget to unmount the card properly before shutting down the board. If yo
     Sab4z> umount /mnt
     Sab4z> poweroff
 
-### <a name="FurtherFileTransferOverlays"></a>Add custom files to the root file system
+### Add custom files to the root file system
 
 Another possibility is offered by the overlay feature of Buildroot which allows to embed custom files in the generated root file system. Add the files to transfer to the overlay and rebuild the root file system:
 
@@ -896,7 +895,7 @@ Unmount and eject the SD card, plug it in the board, power on and connect as roo
     Sab4z> ls /tmp
     foo
 
-### <a name="FurtherFileTransferRx"></a>File transfer on the serial link
+### File transfer on the serial link
 
 The drawback of the two previous solutions is the SD card manipulations. There is a way to transfer files from the host PC to the board using the serial interface. On the board side we will use the Busybox `rx` utility.
 
@@ -944,7 +943,7 @@ On the host side we will use the `sx` utility. If it is not already, install it 
 
 This transfer method is not very reliable. Avoid using it on large files: the probability that a transfer fails increases with its length.
 
-## <a name="FurtherUserApp"></a>Create, compile and run a user software application
+## Create, compile and run a user software application
 
 Do not start this part before the toolchain is built: it is needed.
 
@@ -970,7 +969,7 @@ Transfer the `hello_world` binary on the board (using the network interface or a
     sum_{i=0}^{i=100}{i}=5050
     Bye! SAB4Z
 
-## <a name="FurtherUserAppDebug"></a>Debug a user application with gdb
+## Debug a user application with gdb
 
 In order to debug our simple user application while it is running on the target we will need a network interface between the host PC and the board. In the following we assume that the board board is connected to the network and that its hostname is `sab4z`.
 
@@ -1062,7 +1061,7 @@ There are plenty of `gdb` front ends for those who do not like its command line 
 
     Host> ddd --debugger ${CROSS_COMPILE}gdb -x gdbinit hello_world
 
-## <a name="FurtherSab4zApp"></a>Access SAB4Z from a user software application
+## Access SAB4Z from a user software application
 
 Accessing SAB4Z from a user software application running on top of the Linux operating system is not as simple as it seems: because of the virtual memory, trying to access the SAB4Z registers using their physical addresses would fail. In order to do this we will use `/dev/mem`, a character device that is an image of the memory of the system:
 
@@ -1107,7 +1106,7 @@ Transfer the executable to the board and run the application:
 
 Apparently, the command line that we typed to launch the application, including the string argument that we passed to it, was stored in memory near address `0x806f461c`...
 
-## <a name="FurtherSab4zLinuxDriver"></a>Add a Linux driver for SAB4Z
+## Add a Linux driver for SAB4Z
 
 Accessing the SAB4Z hardware device using the `devmem` utility or a user application that maps `/dev/mem` is not very convenient. In this section we will create a Linux software driver for SAB4Z and use it to interact more conveniently with the hardware. The provided example can be found in the `/opt/downloads/sab4z/C` sub-directory:
 
@@ -1124,9 +1123,9 @@ It handles only the `STATUS` and `R` registers. The driver is split in two parts
 
 To be continued...
 
-## <a name="FurtherRunAcrossSab4z"></a>Run the complete software stack across SAB4Z
+## Run the complete software stack across SAB4Z
 
-### <a name="FurtherRunAcrossSab4zPrinciples"></a>Principles
+### Principles
 
 Thanks to the AXI bridge that SAB4Z implements, the `[2G..3G[` address range is an alias of `[0..1G[`. It is thus possible to run software on the board that use the `[2G..3G[` range instead of `[0..1G[`. It is even possible to run the Linux kernel and all other software applications on top of it in the `[2G..3G[` range. However we must carefully select the range of physical memory that we will instruct the kernel to use:
 
@@ -1137,7 +1136,7 @@ Thanks to the AXI bridge that SAB4Z implements, the `[2G..3G[` address range is 
 
 So, let us use the `[2G+512M..3G[` range, that is, 512MB. Note that, on the ZC706 we could use the 896MB `[2G+128M..3G[` range (`[0x8800_0000..0xc000_0000[`), instead. A drawback of this set up is that the path to the DDR across the PL is much slower than the direct one: its bit-width is 32 bits instead of 64 and its clock frequency is that of the PL, 100MHz in our example design, instead of 650MHz. Of course, the overhead will impact only cache misses but there will be an overhead. So why doing this? Why using less memory than available (on the ZC706) and slowing down the memory accesses? There are several good reasons. One of them is that instead of just relaying the memory accesses, SAB4Z could be modified to implement a kind of monitoring of these accesses. It already counts the AXI transactions but it could do something more sophisticated. It could even tamper with the memory accesses, for instance to emulate accidental memory faults or attacks against the system. Anyway, we can do it, so let us give it a try.
 
-### <a name="FurtherRunAcrossSab4zDT"></a>Modify the device tree
+### Modify the device tree
 
 To boot the Linux kernel and run the software stack in the `[2G+512M..3G[` (`[0xa000_0000..0xc000_0000[`) physical memory range we need to modify a few things. First, edit the device tree source (`/opt/builds/dts/system.dts`) and replace the definition of the physical memory:
 
@@ -1161,7 +1160,7 @@ Recompile the blob:
 
 When parsing the device tree blob during the boot sequence, the Linux kernel will now discover that its physical memory is in the `[0xa000_0000..0xc000_0000[` range.
 
-### <a name="FurtherRunAcrossSab4zKernel"></a>Change the load address in U-Boot image of Linux kernel
+### Change the load address in U-Boot image of Linux kernel
 
 The header of the Linux kernel image contains the address at which U-Boot loads the Linux kernel image (`uImage`) and at which it jumps afterwards. Recreate the Linux kernel image with a different load address:
 
@@ -1170,7 +1169,7 @@ The header of the Linux kernel image contains the address at which U-Boot loads 
 
 U-Boot will now load the uncompressed Linux kernel starting at address `0xa0008000`, that is, it will load it across the PL.
 
-### <a name="FurtherRunAcrossSab4zUboot"></a>Adapt the U-Boot environment variables
+### Adapt the U-Boot environment variables
 
 Last, we must instruct U-Boot to load the device tree blob, Linux kernel and root file system images at different addresses. And, very important, we must force it not to displace the device tree blob and the root file system image as it does by default. This can be done by changing the default values of several U-Boot environment variables, as specified in the provided file:
 
@@ -1195,7 +1194,7 @@ If U-Boot finds a file named `uEnv.txt` on the SD card, it uses its content to d
     Sab4z> umount /mnt
     Sab4z> reboot
 
-### <a name="FurtherRunAcrossSab4zBoot"></a>Boot and see
+### Boot and see
 
 Reboot the board, stop the U-Boot countdown, press the push-button 5 times and let U-Boot continue by typing the `boot` command:
 
@@ -1206,7 +1205,7 @@ Reboot the board, stop the U-Boot countdown, press the push-button 5 times and l
 
 The counter of S1_AXI data-write transactions is now sent to the LEDs during the startup sequence and we should see the LEDs blinking when U-Boot loads the root file system, the device tree blob and the kernel across the PL. As you will probably notice U-Boot takes a bit longer to copy the binaries from the SD card to the memory and to boot the kernel but the system, even if slightly slower, remains responsive and perfectly usable. After the boot you can continue checking that the memory accesses are really routed across the PL by looking at the LEDs. You should see the LEDs blinking while the CPU performs write accesses to the memory across SAB4Z. If the LEDs do not blink enough, interact with the software stack from the serial console, this should increase the number of memory accesses.
 
-## <a name="FurtherIla"></a>Debug hardware using ILA
+## Debug hardware using ILA
 
 Xilinx tools offer several ways to debug the hardware mapped in the PL. One uses Integrated Logic Analyzers (ILAs), hardware blocks that the tools automatically add to the design and that monitor internal signals. The tools running on the host PC communicate with the ILAs in the PL. Triggers can be configured to start / stop the recording of the monitored signals and the recorded signals can be displayed as waveforms.
 
@@ -1241,7 +1240,7 @@ Analyse the complete AXI transaction in the `Waveform` sub-window of Vivado.
 <!--
 * embed a disk partitioning tool,
     Target packages -> Hardware handling -> gptfdisk -> yes
-## <a name="LinuxDriver"></a>Add a Linux driver for SAB4Z
+## Add a Linux driver for SAB4Z
 
 TODO
 
@@ -1272,9 +1271,9 @@ Debug kernel module
 
 -->
 
-# <a name="FAQ"></a>Frequently Asked Questions (FAQ)
+# Frequently Asked Questions (FAQ)
 
-### <a name="FAQ_CharDevAccessRights"></a>Terminal emulator: FATAL: cannot open /dev/ttyUSB1: Permission denied
+### Terminal emulator: FATAL: cannot open /dev/ttyUSB1: Permission denied
 
 If, when launching your terminal emulator, you get this error message, it is probably because the character device that was created when the board was discovered was created with limited access rights:
 
@@ -1299,14 +1298,14 @@ Example with the Zybo:
 
 The `ATTRS{interface}=="Digilent Adept USB Device"` test of the udev rule selects the correct character device. The `ATTRS{bInterfaceNumber}=="01"` selects the correct port of the character device (the FT2232H chip on the Zybo has two ports). The next time we connect the board and power it up, the character device should be created with read/write permission for all users and a symbolic link `/dev/zybo1` should also be created, pointing to `/dev/ttyUSB1`.
 
-### <a name="FAQ_TerminalEmulatorFrozen"></a>Terminal emulator: launches normally but looks frozen
+### Terminal emulator: launches normally but looks frozen
 
 If, when launching your terminal emulator, it looks frozen and you cannot interact with the board, it can be that:
 
 * You booted from the wrong medium and there is no running software stack to interact with on the board. Check the position of the jumper that selects the boot medium (SD card).
 * You attached the terminal emulator to the wrong character device. You can find out which character device to use by a combination of lsusb, udevadm, dmesg... commands. Adding a udev rule, as explained in the solution of the *Terminal emulator: FATAL: cannot open /dev/ttyUSB1: Permission denied* question, is another option: a symbolic link named `/dev/zyboN` (where N is an integer), pointing to `/dev/ttyUSBx` will also be created. Attach your terminal emulator to the most recently created `/dev/zyboN` link.
 
-### <a name="FAQ_ServerCertificate"></a>Git: server certificate verification failed
+### Git: server certificate verification failed
 
 This error message indicates that the verification of the SSL certificate of the remote git server failed. For security reasons git refuses to perform the action you requested because there is a risk that the server is not what you think and you are under, let's say, a man-in-the-middle attack.
 
@@ -1357,11 +1356,11 @@ There are several solutions to this problem, from best to worse:
     Host> GIT_SSL_NO_VERIFY=1 git clone <remote repository> <local destination>
     ````
 
-### <a name="FAQ_ZyboBoardNotFound"></a>Hardware synthesis: ERROR: \[Board 49-71\] The board_part definition was not found for digilentinc.com:zybo:part0:1.0.
+### Hardware synthesis: ERROR: \[Board 49-71\] The board_part definition was not found for digilentinc.com:zybo:part0:1.0.
 
 The configuration files for the board are not properly installed on your Vivado installation. Download and install them according to the [instructions by Digilent](https://reference.digilentinc.com/vivado:boardfiles).
 
-### <a name="FAQ_BUILDROOTLD_LIBRARY_PATH"></a>Buildroot: You seem to have the current working directory in your LD\_LIBRARY\_PATH environment variable. This doesn't work.
+### Buildroot: You seem to have the current working directory in your LD\_LIBRARY\_PATH environment variable. This doesn't work.
 
 The LD\_LIBRARY\_PATH environment variable is a colon-separated list of directories where the system searches for C libraries when it needs them. This error message tells you that the LD\_LIBRARY\_PATH environment variable contains the current working directory (`.`) and that this is not supported by the tool that issued the message. If you look at the value of LD\_LIBRARY\_PATH:
 
@@ -1377,7 +1376,7 @@ which is quite surprising. The trailing colon, in this second example, is treate
 
     Host> export LD_LIBRARY_PATH=/usr/local/lib:/usr/lib:/lib
 
-### <a name="FAQ_BUILDROOTPATH"></a>Buildroot: You seem to have the current working directory in your PATH environment variable. This doesn't work.
+### Buildroot: You seem to have the current working directory in your PATH environment variable. This doesn't work.
 
 The PATH environment variable is a colon-separated list of directories where the system searches for the commands you type. This error message tells you that the PATH environment variable contains the current working directory (`.`) and that this is not supported by the tool that issued the message:
 
@@ -1388,7 +1387,7 @@ Redefine the variable without the `.`:
 
     Host> export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-### <a name="FAQ_UbootEvp"></a>U-Boot: fatal error: openssl/evp.h: No such file or directory
+### U-Boot: fatal error: openssl/evp.h: No such file or directory
 
 If you get this error message when building U-Boot, it is probably because U-Boot has been configured in such a way that its compilation requires the openssl header files to be installed on your host. Either they are not or the U-Boot build system looked for them in the wrong location. The simplest way to fix this is to configure U-Boot such that it does not need the host openssl any more:
 
@@ -1405,7 +1404,7 @@ But of course, if you absolutely need these two options, the best workaround is 
     Host> cd /opt/builds/uboot
     Host> make -j8
 
-### <a name="FAQ_ChangeEthAddr"></a>How can I change the Ethernet MAC address of the board?
+### How can I change the Ethernet MAC address of the board?
 
 If needed, for instance to avoid conflicts, you can change the Ethernet MAC address of your board from the U-Boot command line:
 
@@ -1422,7 +1421,7 @@ If needed, for instance to avoid conflicts, you can change the Ethernet MAC addr
 
 The new Ethernet MAC address has been changed and stored in the on-board SPI Flash memory, from where it will be read again by U-Boot the next time we reboot the board.
 
-### <a name="FAQ_Ncore"></a>What value should I use for the `-j` make option?
+### What value should I use for the `-j` make option?
 
 The `-jN` option (or, equivalently, `--jobs=N`) of make, where `N` is an integer, tells make to launch up to `N` jobs in parallel. The default is 1, meaning that make will always wait for the completion of the current job before launching another one. On multi-core architectures this option can really make a difference on the total time taken by make. Under GNU/Linux use the `lscpu` utility to discover how many cores your machine has and set the `-jN` option accordingly. If your architecture supports hyperthreading (two logical cores per physical core) and if your machine is not heavily loaded by other tasks you can even double that number. Examples:
 
@@ -1452,32 +1451,32 @@ This machine has one processor (`Socket(s)`) with 4 cores (`Core(s) per socket`)
 
 has one processor with 6 cores and hyperthreading, that is, a total of 12 logical CPUs. The `-j12` is probably the best choice if the machine is not loaded by other heavy tasks but `-j6` may be better if it is. Increasing the value of `N` above twice the total number of logical cores usually does not provide any benefit.
 
-### <a name="FAQ_HWTargetNotFound"></a>Vivado: ERROR: \[Labtoolstcl 44-26\] No hardware targets exist on the server \[localhost\]
+### Vivado: ERROR: \[Labtoolstcl 44-26\] No hardware targets exist on the server \[localhost\]
 
 If you get this error message when trying to connect to the ILA core in the PL of the Zynq of the board from Vivado, it is probably because the JTAG device drivers are not properly installed on your host. You probably did not select their installation when installing Vivado. In order to install them you need to be `root`. Quit Vivado, power down the board, disconnect the USB cable and install the drivers:
 
     Host# cd <vivado-install-directory>/data/xicom/cable_drivers/<lin64|lin>/install_script/install_drivers
     Host# ./install_drivers
 
-# <a name="Glossary"></a>Glossary
+# Glossary
 
-### <a name="GlossaryAxi"></a>AXI bus protocol
+### AXI bus protocol
 
 AXI (AMBA-4) is a bus protocol created by ARM. It is an open standard frequently encountered in Systems-on-Chips (SoC). It is used to interconnect components and comes in different flavours (lite, regular, stream...), depending on the specific communication needs of the participants. The Xilinx Zynq cores use the AXI protocol to interconnect the Processing System (the ARM processor plus its peripherals) and the Programmable Logic (the FPGA part of the core). More information on the AXI bus protocol can be found on ARM web site. More information the Zynq architecture can be found on Xilinx web site.
 
-### <a name="GlossaryFt2232hCharDev"></a>Character device for the FT2232H FTDI chip
+### Character device for the FT2232H FTDI chip
 
 The micro-USB connector of the board is connected to a FT2232H chip from FTDI Chip situated on the back side of the board. This chip (among other things) converts the USB protocol to a UART serial protocol. The UART side of the chip is connected to one of the UART ports of the Zynq core. The Linux kernel that runs on the Zynq is configured to use this UART port to send messages and to receive commands. When we connect the board to the host PC with the USB cable and power it up, a special file is automatically created on the host (e.g. `/dev/ttyUSB1`). This special file is called a _character device_. It is the visible part of the low-level software device driver that manages the communication between our host and the board through the USB cable and the FT2232H chip on the board. The terminal emulator uses this character device to communicate with the board.
 
-### <a name="GlossaryDeviceTree"></a>Device tree
+### Device tree
 
 A device tree is a textual description of the hardware platform on which the Linux kernel runs. Before the concept of device trees have been introduced, running the same kernel on different platforms was difficult, even if the processor was the same. It was quite common to distribute different kernel binaries for very similar platforms because the set of devices was different or because some parameters, like the hardware address at which a device is found, were different. Thanks to device trees, the same kernel can discover the hardware architecture of the target and adapt itself during boot. To make a long story short, we generate a textual description of the board - the device tree source - and transform it into an equivalent binary form - the device tree blob - with dtc - the device tree compiler - (dtc is one of the host utilities generated by Buildroot). We then add this device tree blob to the SD card. U-Boot loads it from the SD card, installs it somewhere in memory and passes its address to the Linux kernel. During the boot the Linux kernel parses this data structure and configures itself accordingly.
 
-### <a name="GlossaryECDSA"></a>ECDSA
+### ECDSA
 
 Elliptic Curve Digital Signature Algorithm. See [Wikipedia](https://en.wikipedia.org/wiki/Elliptic_Curve_Digital_Signature_Algorithm).
 
-### <a name="GlossaryFileSystem"></a>File system
+### File system
 
 A file system is a software layer that manages the data stored on a storage device like a Hard Disk Drive (HDD) or a flash card. It organizes the data in a hierarchy of directories and files. The term is also used to designate a hierarchy of directories that is managed by this software layer. The **root** file system, as its name says, is itself a file system and also the root of all other file systems, that are bound to (mounted on) sub-directories. The df command can show you all file systems of your host PC and their mount point:
 
@@ -1507,7 +1506,7 @@ The file system mounted on `/` is the root file system:
 
 `/bin` and all its content are part of the root file system but `/dev` is the mount point of a different file system. In most cases it makes no difference whether a file is part of a file system or another: they all seem to be somewhere in the same unique hierarchy of directories that start at `/`.
 
-### <a name="GlossaryFsbl"></a>First Stage Boot Loader
+### First Stage Boot Loader
 
 When the Zynq core of the board is powered up, the ARM processor executes its first instructions from an on-chip ROM. This BootROM code performs several initializations, reads the configuration of the jumpers that select the boot medium (see the Zybo picture) and loads a boot image from the selected medium (the SD card in our case). This boot image is a binary archive file that encapsulates up to 3 different binary files:
 
@@ -1517,22 +1516,22 @@ When the Zynq core of the board is powered up, the ARM processor executes its fi
 
 The BootROM code loads the FSBL in the On-Chip RAM (OCR) of the Zynq core and jumps into the FSBL. So, technically speaking, the FSBL is not the **first** boot loader, as its name says, but the second. The real first boot loader is the BootROM code. Anyway, the FSBL, in turn, performs several initializations, extracts the bitstream from the boot image and uses it to configures the PL. Then, it loads the software application from the boot image, installs it in memory and jumps into it. In our case, this software application is U-Boot, that we use as a Second Stage Boot Loader (or shall we write **third**?) to load the Linux kernel, the device tree blob and the root file system before jumping into the kernel.
 
-### <a name="GlossaryGdbServer"></a>gdb server
+### gdb server
 
 A gdb server is a tiny application that runs on the same target as the application to debug. It communicates with a full gdb running on a remote host, either through a serial link or a network interface. The remote gdb sends commands to the gdb server that executes them locally and sends back their outputs to the remote gdb. This setting allows to debug an application running on the target, from a remote host, without running the complete gdb on the target. We could also have added the complete gdb to our root file system, instead of the tiny gdb server, and thus debugged our applications directly on the board. But the complete gdb is a rather large application and the size of our initramfs - memory limited - root file system would have been increased by a significant amount.
 
-### <a name="GlossaryInitramfs"></a>initramfs root file system
+### initramfs root file system
 
 An initramfs root file system is loaded entirely in RAM at boot time, while the more classical root file system of your host probably resides on a Hard Disk Drive (HDD). With initramfs, a portion of the available memory is presented and used just like if it was mass storage. This portion is initialized at boot time from a binary file, the root file system image, stored on the boot medium (the SD card in our case). The good point with initramfs is that it is ultra-fast because memory accesses are much faster than accesses to HDDs. The drawbacks are that it is not persistent across reboot (it is restored to its original state every time you boot) and that its size is limited by the available memory (512MB on the Zybo - and even less because we need some working memory too - compared to the multi-GB capacity of the HDD of your host).
 
-### <a name="GlossaryLinuxKernel"></a>Linux kernel
+### Linux kernel
 
 The Linux kernel is a key component of our software stack, even if it is not sufficient and would not be very useful without our root file system and all the software applications in it. The kernel and its software device drivers are responsible for the management of our small computer. They control the sharing of all resources (memory, peripherals...) among the different software applications and serve as intermediates between the software and the hardware, hiding most of the low level details. They also offer the same (software) interface, independently of the underlying hardware: thanks to the kernel and its device drivers we will access the various features of our board exactly as we would do on another type of computer. This is what is called _hardware abstraction_ in computer science.
 
-### <a name="GlossaryTerminalEmulator"></a>Terminal emulator
+### Terminal emulator
 
 A terminal emulator (e.g. picocom) is a software application that runs on the host and behaves like the hardware terminals that were used in the old days to communicate with computers across a serial link. It is attached to a character device that works a bit like a file in which one can read and write characters. When we type characters on our keyboard, the terminal emulator writes them to the character device and the software device driver associated to the character device sends them to the board through the USB cable. Symmetrically, when the board sends characters through the USB cable, the terminal emulator reads them from the character device and prints them on our screen.
 
-### <a name="GlossaryUART"></a>UART
+### UART
 
 Universal Asynchronous Receiver/Transmitter. See [Wikipedia](https://en.wikipedia.org/wiki/Universal_asynchronous_receiver/transmitter).

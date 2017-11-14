@@ -1,5 +1,6 @@
 #
 # Copyright (C) Telecom ParisTech
+# Copyright (C) Renaud Pacalet (renaud.pacalet@telecom-paristech.fr)
 # 
 # This file must be used under the terms of the CeCILL. This source
 # file is licensed as described in the file COPYING, which you should

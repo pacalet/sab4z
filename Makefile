@@ -1,5 +1,6 @@
 #
 # Copyright (C) Telecom ParisTech
+# Copyright (C) Renaud Pacalet (renaud.pacalet@telecom-paristech.fr)
 # 
 # This file must be used under the terms of the CeCILL. This source
 # file is licensed as described in the file COPYING, which you should
@@ -7,6 +8,8 @@
 # available at:
 # http://www.cecill.info/licences/Licence_CeCILL_V1.1-US.txt
 #
+
+.NOTPARALLEL:
 
 #############
 # Variables #
@@ -25,7 +28,7 @@ OUTPUT	:=
 endif
 
 rootdir		:= $(realpath .)
-BUILD		?= /opt/builds
+BUILD		?= /tmp/sab4z.builds
 HDLDIR		:= hdl
 HDLSRCS		:= $(wildcard $(HDLDIR)/*.vhd)
 SCRIPTS		:= scripts
@@ -36,9 +39,9 @@ MSCONFIG	:= $(MSBUILD)/modelsim.ini
 MSLIB		:= vlib
 MSMAP		:= vmap
 MSCOM		:= vcom
-MSCOMFLAGS	:= -ignoredefaultbinding -nologo -quiet -2008
+MSCOMFLAGS	:= -ignoredefaultbinding -nologo -quiet -2002
 MSSIM		:= vsim
-MSSIMFLAGS	:= -voptargs="+acc"
+MSSIMFLAGS	:= -c -voptargs="+acc" -do 'run -all; quit'
 MSTAGS		:= $(patsubst $(HDLDIR)/%.vhd,$(MSBUILD)/%.tag,$(HDLSRCS))
 
 # Xilinx Vivado
@@ -71,6 +74,7 @@ define HELP_message
 make targets:
   make help       print this message (default goal)
   make ms-all     compile all VHDL source files with Modelsim ($(MSBUILD))
+  make ms-sim     simulate SAB4Z with Modelsim
   make ms-clean   delete all files and directories automatically created by Modelsim
   make vv-all     synthesize design with Vivado ($(VVBUILD))
   make vv-clean   delete all files and directories automatically created by Vivado
@@ -119,7 +123,7 @@ $(MSTAGS): $(MSBUILD)/%.tag: $(HDLDIR)/%.vhd
 	@echo '[MSCOM] $<' && \
 	cd $(MSBUILD) && \
 	$(MSCOM) $(MSCOMFLAGS) $(rootdir)/$< && \
-	touch $(rootdir)/$@
+	touch $@
 
 $(MSTAGS): $(MSCONFIG)
 
@@ -130,7 +134,14 @@ $(MSCONFIG):
 	$(MSLIB) .work $(OUTPUT) && \
 	$(MSMAP) work .work $(OUTPUT)
 
-$(MSBUILD)/sab4z.tag: $(MSBUILD)/axi_pkg.tag $(MSBUILD)/debouncer.tag
+$(MSBUILD)/sab4z_sim.tag: $(MSBUILD)/sab4z.tag
+
+.PHONY: sim
+
+ms-sim: $(MSBUILD)/sab4z_sim.tag
+	@echo '[MSSIM] $<' && \
+	cd $(MSBUILD) && \
+	$(MSSIM) $(MSSIMFLAGS) work.sab4z_sim
 
 ms-clean:
 	@echo '[RM] $(MSBUILD)' && \
