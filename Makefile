@@ -30,8 +30,8 @@ endif
 rootdir		:= $(realpath .)
 BUILD		?= /tmp/sab4z.builds
 HDLDIR		:= hdl
-HDLSRCS		:= $(addprefix $(HDLDIR)/,axi_pkg.vhd debouncer.vhd sab4z.vhd)
-HDLSRCS64	:= $(addprefix $(HDLDIR)/,axi64_pkg.vhd debouncer.vhd sab4u.vhd)
+HDLSRCS		:= $(addprefix $(HDLDIR)/,sab4z.vhd)
+HDLSRCS64	:= $(addprefix $(HDLDIR)/,axi64_pkg.vhd sab4u.vhd)
 SCRIPTS		:= scripts
 
 # Mentor Graphics Modelsim
